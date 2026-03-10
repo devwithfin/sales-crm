@@ -1,0 +1,114 @@
+import * as React from "react"
+import {
+    LayoutDashboard,
+    PanelLeft,
+} from "lucide-react"
+import { Link, useLocation } from "react-router-dom"
+import { menuData } from "@/constants/menuData"
+
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarGroupContent,
+    useSidebar,
+} from "@/components/ui/sidebar"
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { state, toggleSidebar } = useSidebar()
+    const location = useLocation()
+
+    return (
+        <Sidebar variant="sidebar" collapsible="icon" {...props} className="border-r">
+            <SidebarHeader className={`border-b h-16 flex flex-row items-center transition-all duration-300 ${state === "collapsed" ? "justify-center px-0" : "justify-between px-4"
+                }`}>
+                <div
+                    className={`flex items-center cursor-pointer min-w-0 ${state === "collapsed" ? "justify-center" : "gap-3"
+                        }`}
+                    onClick={state === "collapsed" ? toggleSidebar : undefined}
+                >
+                    <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shrink-0">
+                        <LayoutDashboard className="size-5" />
+                    </div>
+                    <div className="flex flex-col gap-0.5 leading-none whitespace-nowrap overflow-hidden transition-all duration-300 group-data-[state=collapsed]:hidden text-left">
+                        <span className="font-bold text-base tracking-tight text-white">LichemIndo</span>
+                        <span className="text-[10px] uppercase font-bold text-white/70 tracking-widest leading-none">CRM</span>
+                    </div>
+                </div>
+
+                {state === "expanded" && (
+                    <button
+                        onClick={toggleSidebar}
+                        className="flex size-9 items-center justify-center rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-all shrink-0 ml-auto"
+                        title="Collapse Sidebar"
+                    >
+                        <PanelLeft className="size-5" />
+                    </button>
+                )}
+            </SidebarHeader>
+
+            <SidebarContent className={`!overflow-y-auto !overflow-x-hidden no-scrollbar h-full pt-6 pb-10 gap-0`}>
+                {menuData.map((group) => (
+                    <SidebarGroup key={group.title} className={`px-0 ${state === "collapsed" ? "py-0" : "py-2"}`}>
+                        <SidebarGroupLabel className={`px-6 text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/50 mb-0 ${state === "collapsed" ? "hidden" : "block"
+                            }`}>
+                            {group.title}
+                        </SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu className={state === "collapsed" ? "gap-0" : "gap-1"}>
+                                {group.items.map((item) => {
+                                    const isActive = location.pathname === item.url
+                                    return (
+                                        <SidebarMenuItem key={item.title}>
+                                            <SidebarMenuButton
+                                                tooltip={item.title}
+                                                isActive={isActive}
+                                                className="p-0 h-auto overflow-visible group-data-[collapsible=icon]:w-[5.5rem]! group-data-[collapsible=icon]:h-16! group-data-[collapsible=icon]:p-0!"
+                                            >
+                                                <Link
+                                                    to={item.url}
+                                                    className={`flex transition-all w-full font-medium relative group ${state === "collapsed"
+                                                        ? 'flex-col items-center justify-center py-2 h-16 px-0 gap-1'
+                                                        : 'flex-row items-center px-6 py-2.5 gap-3'
+                                                        } ${isActive && state === "expanded"
+                                                            ? 'bg-white/12 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
+                                                            : isActive && state === "collapsed"
+                                                                ? 'text-white bg-transparent'
+                                                                : 'text-white/60 hover:bg-white/10 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {/* Active Indicator Bar - Only show when expanded */}
+                                                    {isActive && state === "expanded" && (
+                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] z-10" />
+                                                    )}
+
+                                                    {item.icon && (
+                                                        <item.icon className={`shrink-0 transition-transform duration-300 ${state === "collapsed" ? "size-7" : "size-5"
+                                                            }`} />
+                                                    )}
+
+                                                    <span className={`tracking-wide transition-all duration-300 ${state === "collapsed"
+                                                        ? "text-[10px] font-bold text-center leading-tight px-1"
+                                                        : "text-sm block"
+                                                        }`}>
+                                                        {item.title}
+                                                    </span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    )
+                                })}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ))}
+            </SidebarContent>
+
+        </Sidebar >
+    )
+}
