@@ -21,12 +21,13 @@ export function AppNavbar() {
     // Find the current menu item title based on the URL
     const currentMenuItem = menuData
         .flatMap(group => group.items)
-        .find(item => item.url === location.pathname)
+        .sort((a, b) => b.url.length - a.url.length)
+        .find(item => location.pathname === item.url || location.pathname.startsWith(`${item.url}/`))
 
     const pageTitle = currentMenuItem ? currentMenuItem.title : "Dashboard"
 
     return (
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 sticky top-0 bg-background z-20 justify-between">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 sticky top-0 bg-white z-50 justify-between shadow-sm">
             <div className="flex items-center gap-2 md:px-2">
                 <h2 className="text-lg font-bold tracking-tight text-foreground/90">{pageTitle}</h2>
             </div>

@@ -130,3 +130,33 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .hover-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .hover-scrollbar:hover {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.4) transparent;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar {
+    height: 0;
+    width: 0;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(15, 23, 42, 0.4);
+    border-radius: 9999px;
+  }
+}

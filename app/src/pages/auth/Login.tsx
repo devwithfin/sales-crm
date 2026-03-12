@@ -2,7 +2,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { LayoutDashboard, Lock, Mail, Eye, EyeOff } from "lucide-react"
+import { Lock, Mail, Eye, EyeOff } from "lucide-react"
+import { COMPANY_LOGO_PATH } from "@/constants/branding"
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
@@ -21,20 +22,20 @@ export default function LoginPage() {
 
                 <div className="relative z-10 max-w-lg text-center">
                     <div className="inline-flex items-center justify-center p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 mb-8 shadow-2xl animate-bounce-slow">
-                        <LayoutDashboard className="size-12 text-white" />
+                        <img src={COMPANY_LOGO_PATH} alt="Licentra logo" className="size-12 object-contain" />
                     </div>
                     <h1 className="text-5xl font-extrabold text-white tracking-tight mb-6 leading-[1.1]">
-                        Elevate Your Business with <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] underline decoration-primary decoration-4 underline-offset-8">LichemIndo</span>
+                        Elevate Your Business with <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] underline decoration-primary decoration-4 underline-offset-8">Licentra</span>
                     </h1>
                     <p className="text-red-100/70 text-lg font-medium leading-relaxed mb-10">
-                        The most advanced CRM solution for growing teams. Manage leads, track deals, and boost productivity in one seamless platform.
+                        The most advanced customer engagement platform for growing teams. Manage leads, track deals, and boost productivity in one seamless workspace.
                     </p>
 
                 </div>
 
                 {/* Footer text in branding side */}
                 <div className="absolute bottom-8 text-white/30 text-xs font-bold tracking-widest uppercase">
-                    &copy; 2026 LichemIndo CRM &bull; All Rights Reserved
+                    &copy; 2026 Licentra &bull; All Rights Reserved
                 </div>
             </div>
 
@@ -45,12 +46,12 @@ export default function LoginPage() {
 
                 <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                     <div className="lg:hidden flex flex-col items-center gap-2 mb-10 justify-center">
-                        <div className="size-12 bg-primary flex items-center justify-center rounded-2xl text-white shadow-xl shadow-primary/20">
-                            <LayoutDashboard className="size-7" />
+                        <div className="size-12 bg-white flex items-center justify-center rounded-2xl text-white shadow-xl shadow-primary/20 p-2">
+                            <img src={COMPANY_LOGO_PATH} alt="Licentra logo" className="h-full w-full object-contain" />
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-black tracking-tighter text-slate-900">LICHEMINDO</span>
-                            <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-primary">CRM Platform</span>
+                            <span className="text-2xl font-black tracking-tighter text-slate-900">LICENTRA</span>
+                            <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-primary">Platform</span>
                         </div>
                     </div>
 

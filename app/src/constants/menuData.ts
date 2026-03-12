@@ -4,14 +4,13 @@ import {
     Users,
     UserCircle,
     Handshake,
-    CheckSquare,
     MapPin,
-    PhoneCall,
     Package,
     FileText,
     ShoppingCart,
     ShieldAlert,
     UserCog,
+    Kanban,
 } from "lucide-react"
 
 export interface NavItem {
@@ -44,9 +43,8 @@ export const menuData: NavGroup[] = [
     {
         title: "Activities",
         items: [
-            { title: "Tasks", url: "/tasks", icon: CheckSquare },
+            { title: "Stages", url: "/tasks", icon: Kanban },
             { title: "Visits", url: "/visits", icon: MapPin },
-            { title: "Calls", url: "/calls", icon: PhoneCall },
         ],
     },
     {

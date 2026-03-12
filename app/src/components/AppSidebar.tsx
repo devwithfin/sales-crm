@@ -1,10 +1,10 @@
 import * as React from "react"
 import {
-    LayoutDashboard,
     PanelLeft,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { menuData } from "@/constants/menuData"
+import { COMPANY_LOGO_PATH } from "@/constants/branding"
 
 import {
     Sidebar,
@@ -24,7 +24,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const location = useLocation()
 
     return (
-        <Sidebar variant="sidebar" collapsible="icon" {...props} className="border-r">
+        <Sidebar variant="sidebar" collapsible="icon" {...props} className="border-r z-50 shadow-[4px_0_24px_rgba(0,0,0,0.05)]">
             <SidebarHeader className={`border-b h-16 flex flex-row items-center transition-all duration-300 ${state === "collapsed" ? "justify-center px-0" : "justify-between px-4"
                 }`}>
                 <div
@@ -32,12 +32,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         }`}
                     onClick={state === "collapsed" ? toggleSidebar : undefined}
                 >
-                    <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shrink-0">
-                        <LayoutDashboard className="size-5" />
+                    <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-white text-primary-foreground shadow-md shrink-0 p-1.5">
+                        <img src={COMPANY_LOGO_PATH} alt="Licentra logo" className="h-full w-full object-contain" />
                     </div>
                     <div className="flex flex-col gap-0.5 leading-none whitespace-nowrap overflow-hidden transition-all duration-300 group-data-[state=collapsed]:hidden text-left">
-                        <span className="font-bold text-base tracking-tight text-white">LichemIndo</span>
-                        <span className="text-[10px] uppercase font-bold text-white/70 tracking-widest leading-none">CRM</span>
+                        <span className="font-bold text-base tracking-tight text-white">Licentra</span>
                     </div>
                 </div>
 
@@ -55,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent className={`!overflow-y-auto !overflow-x-hidden no-scrollbar h-full pt-6 pb-10 gap-0`}>
                 {menuData.map((group) => (
                     <SidebarGroup key={group.title} className={`px-0 ${state === "collapsed" ? "py-0" : "py-2"}`}>
-                        <SidebarGroupLabel className={`px-6 text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/50 mb-0 ${state === "collapsed" ? "hidden" : "block"
+                        <SidebarGroupLabel className={`px-6 text-sm font-extrabold tracking-[0.02em] text-white/70 mb-0 ${state === "collapsed" ? "hidden" : "block"
                             }`}>
                             {group.title}
                         </SidebarGroupLabel>

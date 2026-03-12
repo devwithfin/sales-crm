@@ -7,17 +7,18 @@ import LoginPage from "@/pages/auth/Login"
 import ReportsPage from "@/pages/general/Reports"
 
 // Sales
-import LeadsPage from "@/pages/sales/Leads"
-import ContactsPage from "@/pages/sales/Contacts"
+import LeadsPage from "@/pages/sales/leads"
+import LeadCreatePage from "@/pages/sales/leads/create"
+import ContactsPage from "@/pages/sales/contacts"
 import DealsPage from "@/pages/sales/Deals"
 
 // Activities
 import TasksPage from "@/pages/activities/Tasks"
 import VisitsPage from "@/pages/activities/Visits"
-import CallsPage from "@/pages/activities/Calls"
 
 // Transactions
-import ProductsPage from "@/pages/transactions/Products"
+import ProductsPage from "@/pages/transactions/products"
+import ProductCreatePage from "@/pages/transactions/products/create"
 import QuotesPage from "@/pages/transactions/Quotes"
 import PurchaseOrdersPage from "@/pages/transactions/PurchaseOrders"
 
@@ -38,14 +39,15 @@ export default function AppRoutes() {
                 <Route path="/reports" element={<ReportsPage />} />
 
                 <Route path="/leads" element={<LeadsPage />} />
+                <Route path="/leads/create" element={<LeadCreatePage />} />
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/deals" element={<DealsPage />} />
 
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/visits" element={<VisitsPage />} />
-                <Route path="/calls" element={<CallsPage />} />
 
                 <Route path="/products" element={<ProductsPage />} />
+                <Route path="/products/create" element={<ProductCreatePage />} />
                 <Route path="/quotes" element={<QuotesPage />} />
                 <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
 
