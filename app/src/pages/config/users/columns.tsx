@@ -1,5 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 import { MoreHorizontal } from "lucide-react"
 import {
     DropdownMenu,
@@ -8,19 +11,17 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-
-export type Lead = {
+export type User = {
+    id: string
     name: string
-    company: string
     email: string
-    phone: string
-    status: "New" | "Working" | "Qualified"
-    owner: string
+    role: string
+    department: string
+    status: "Active" | "Inactive"
+    avatarUrl?: string
 }
 
-
-
-export const columns: ColumnDef<Lead>[] = [
+export const columns: ColumnDef<User>[] = [
     {
         id: "actions",
         header: () => null,
@@ -56,7 +57,7 @@ export const columns: ColumnDef<Lead>[] = [
             <Checkbox
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label={`Select lead ${row.original.name}`}
+                aria-label={`Select user ${row.original.name}`}
             />
         ),
         enableSorting: false,
@@ -65,26 +66,36 @@ export const columns: ColumnDef<Lead>[] = [
     },
     {
         accessorKey: "name",
-        header: "Lead Name",
+        header: "User",
+        cell: ({ row }) => {
+            const initials = row.original.name.split(' ').map(n => n[0]).join('')
+            return (
+                <div className="flex items-center gap-3">
+                    <Avatar className="size-8">
+                        <AvatarImage src={row.original.avatarUrl} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-slate-900 leading-none">{row.original.name}</span>
+                        <span className="text-[11px] text-slate-400 mt-1">{row.original.email}</span>
+                    </div>
+                </div>
+            )
+        },
+    },
+    {
+        accessorKey: "role",
+        header: "Role",
         cell: ({ row }) => (
-            <span className="font-semibold text-slate-900">{row.original.name}</span>
+            <Badge variant="outline" className="rounded-md font-medium border-slate-200 text-slate-600">
+                {row.original.role}
+            </Badge>
         ),
     },
     {
-        accessorKey: "company",
-        header: "Company",
-    },
-    {
-        accessorKey: "email",
-        header: "Email",
-    },
-    {
-        accessorKey: "phone",
-        header: "Phone",
-    },
-    {
-        accessorKey: "owner",
-        header: "Sales Owner",
+        accessorKey: "department",
+        header: "Department",
+        cell: ({ row }) => <span className="text-slate-500 text-sm">{row.original.department}</span>,
     },
 
 ]

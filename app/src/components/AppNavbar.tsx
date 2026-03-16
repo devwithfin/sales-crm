@@ -1,5 +1,5 @@
 import { Bell, User, LogOut, Search } from "lucide-react"
-import { useLocation } from "react-router-dom"
+import { useLocation, Link } from "react-router-dom"
 import { menuData } from "@/constants/menuData"
 import { Input } from "@/components/ui/input"
 import {
@@ -56,10 +56,12 @@ export function AppNavbar() {
                     </DropdownMenuTrigger>
 
                     <DropdownMenuContent align="end" className="w-48 mt-2 rounded-xl p-1 shadow-md bg-white border border-slate-200">
-                        <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer rounded-lg hover:bg-slate-50 transition-colors outline-none text-slate-700">
-                            <User className="size-4 text-slate-400" />
-                            <span className="text-sm font-medium text-slate-900">My Account</span>
-                        </DropdownMenuItem>
+                        <Link to="/profile/my-account">
+                            <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer rounded-lg hover:bg-slate-50 transition-colors outline-none text-slate-700">
+                                <User className="size-4 text-slate-400" />
+                                <span className="text-sm font-medium text-slate-900">My Account</span>
+                            </DropdownMenuItem>
+                        </Link>
 
                         <DropdownMenuSeparator className="my-1 border-t border-slate-100" />
 

@@ -10,7 +10,7 @@ import {
     ShoppingCart,
     ShieldAlert,
     UserCog,
-    Kanban,
+    Building2,
 } from "lucide-react"
 
 export interface NavItem {
@@ -37,14 +37,9 @@ export const menuData: NavGroup[] = [
         items: [
             { title: "Leads", url: "/leads", icon: Users },
             { title: "Contacts", url: "/contacts", icon: UserCircle },
-            { title: "Deals", url: "/deals", icon: Handshake },
-        ],
-    },
-    {
-        title: "Activities",
-        items: [
-            { title: "Stages", url: "/tasks", icon: Kanban },
+            { title: "Accounts", url: "/accounts", icon: Building2 },
             { title: "Visits", url: "/visits", icon: MapPin },
+            { title: "Deals", url: "/deals", icon: Handshake },
         ],
     },
     {

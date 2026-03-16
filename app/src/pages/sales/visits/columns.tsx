@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+
 import { MoreHorizontal } from "lucide-react"
 import {
     DropdownMenu,
@@ -8,19 +9,17 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-
-export type Lead = {
-    name: string
-    company: string
-    email: string
-    phone: string
-    status: "New" | "Working" | "Qualified"
-    owner: string
+export type Visit = {
+    id: string
+    title: string
+    location: string
+    from: string
+    to: string
+    host: string
+    relatedTo: string
 }
 
-
-
-export const columns: ColumnDef<Lead>[] = [
+export const columns: ColumnDef<Visit>[] = [
     {
         id: "actions",
         header: () => null,
@@ -56,7 +55,7 @@ export const columns: ColumnDef<Lead>[] = [
             <Checkbox
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label={`Select lead ${row.original.name}`}
+                aria-label={`Select visit ${row.original.title}`}
             />
         ),
         enableSorting: false,
@@ -64,27 +63,28 @@ export const columns: ColumnDef<Lead>[] = [
         size: 10,
     },
     {
-        accessorKey: "name",
-        header: "Lead Name",
-        cell: ({ row }) => (
-            <span className="font-semibold text-slate-900">{row.original.name}</span>
-        ),
+        accessorKey: "title",
+        header: "Title",
+        cell: ({ row }) => <span className="font-semibold text-slate-900">{row.original.title}</span>,
     },
     {
-        accessorKey: "company",
-        header: "Company",
+        accessorKey: "location",
+        header: "Location",
     },
     {
-        accessorKey: "email",
-        header: "Email",
+        accessorKey: "from",
+        header: "From",
     },
     {
-        accessorKey: "phone",
-        header: "Phone",
+        accessorKey: "to",
+        header: "To",
     },
     {
-        accessorKey: "owner",
-        header: "Sales Owner",
+        accessorKey: "host",
+        header: "Host",
     },
-
+    {
+        accessorKey: "relatedTo",
+        header: "Related To",
+    },
 ]

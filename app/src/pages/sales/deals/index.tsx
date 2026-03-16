@@ -1,11 +1,12 @@
-import { useState, useRef, useLayoutEffect, type CSSProperties } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { MoreHorizontal } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import type { DropResult } from "@hello-pangea/dnd"
-
 
 interface Task {
     id: string;
@@ -76,60 +77,21 @@ const initialKanbanData: Column[] = [
         ]
     },
     {
-        id: "closed-win",
-        title: "Closed Won",
+        id: "closed",
+        title: "Closed",
         tasks: [
             { id: "15", title: "Order Fulfilled", priority: "High", dueDate: "09 Mar", clientName: "PT Sentosa", assignee: { name: "Siti Rahmawati" } },
-        ]
-    },
-    {
-        id: "closed-lost",
-        title: "Closed Lost",
-        tasks: [
-            { id: "16", title: "Lost - Budget Issues", priority: "Low", dueDate: "08 Mar", clientName: "Raja Oloan", assignee: { name: "Joko Anwar" } },
         ]
     }
 ]
 
-export default function TasksPage() {
+export default function DealsPage() {
     const [kanbanData, setKanbanData] = useState<Column[]>(initialKanbanData)
-    const boardRef = useRef<HTMLDivElement | null>(null)
-    const [boardBounds, setBoardBounds] = useState<DOMRect | null>(null)
-
-    useLayoutEffect(() => {
-        const updateBounds = () => {
-            if (boardRef.current) {
-                setBoardBounds(boardRef.current.getBoundingClientRect())
-            }
-        }
-
-        updateBounds()
-        window.addEventListener("resize", updateBounds)
-        window.addEventListener("scroll", updateBounds)
-        return () => {
-            window.removeEventListener("resize", updateBounds)
-            window.removeEventListener("scroll", updateBounds)
-        }
-    }, [])
-
-    const clampDragStyle = (style: CSSProperties | undefined, isDragging: boolean) => {
-        if (!isDragging || !style || !boardBounds) return style
-        if (typeof style.top !== "number") return style
-
-        const minTop = boardBounds.top + 48
-        if (style.top < minTop) {
-            return { ...style, top: minTop }
-        }
-        return style
-    }
 
     const onDragEnd = (result: DropResult) => {
         const { source, destination } = result;
 
-        // Dropped outside the list
-        if (!destination) {
-            return;
-        }
+        if (!destination) return;
 
         const sourceColIndex = kanbanData.findIndex(col => col.id === source.droppableId);
         const destColIndex = kanbanData.findIndex(col => col.id === destination.droppableId);
@@ -184,15 +146,10 @@ export default function TasksPage() {
                 text: "text-cyan-800",
                 badge: "bg-cyan-200/70 text-cyan-800 border-none"
             };
-            case "closed-win": return {
+            case "closed": return {
                 bg: "bg-emerald-50/60 border-emerald-200/60",
                 text: "text-emerald-800",
                 badge: "bg-emerald-200/70 text-emerald-800 border-none"
-            };
-            case "closed-lost": return {
-                bg: "bg-rose-50/60 border-rose-200/60",
-                text: "text-rose-800",
-                badge: "bg-rose-200/70 text-rose-800 border-none"
             };
             default: return {
                 bg: "bg-slate-100/60 border-slate-200/60",
@@ -205,42 +162,37 @@ export default function TasksPage() {
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-700 w-full min-w-0">
             {/* Page Header */}
-            <div className="flex justify-end shrink-0 relative z-40 pb-5">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <button className="size-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition">
-                            <ChevronLeft className="size-4" />
-                        </button>
-                        <div className="px-4 py-2 rounded-lg border border-slate-200 bg-white shadow-sm text-sm font-semibold text-slate-700 tracking-wide">
-                            Januari 2026
-                        </div>
-                        <button className="size-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition">
-                            <ChevronRight className="size-4" />
-                        </button>
-                    </div>
-                    <Button className="rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all">
-                        Create Task
-                    </Button>
-                </div>
+            <div className="flex items-center justify-between px-1">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Deals Board</h1>
+                <Link
+                    to="/deals/create"
+                    className={cn(
+                        buttonVariants({ variant: "default" }),
+                        "rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
+                    )}
+                >
+                    Create Deal
+                </Link>
             </div>
-
             {/* Kanban Board Area */}
             <DragDropContext onDragEnd={onDragEnd}>
-                <div ref={boardRef} className="flex-1 w-full min-h-0 h-full overflow-x-auto overflow-y-hidden relative z-0 mt-4 pb-2 hover-scrollbar">
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-slate-50 via-transparent to-transparent z-10" />
-                    <div className="flex gap-6 h-full min-h-full w-max items-stretch px-0.5">
+                <div className="flex-1 w-full min-h-0 overflow-x-auto overflow-y-hidden no-scrollbar relative z-0 mt-4">
+                    <div className="flex gap-6 pb-6 h-full min-h-0 w-max items-start px-0.5">
                         {kanbanData.map((column) => {
                             const theme = getColumnTheme(column.id);
                             return (
-                                <div key={column.id} className={`w-80 flex flex-col gap-3 h-full min-h-full ${theme.bg} border rounded-[1.25rem] p-3 shadow-sm overflow-hidden`}>
+                                <div key={column.id} className={`w-80 flex flex-col gap-3 h-full min-h-0 ${theme.bg} border rounded-[1.25rem] p-3 shadow-sm`}>
                                     {/* Column Header */}
-                                    <div className="flex items-center justify-start px-1 shrink-0 pb-1">
+                                    <div className="flex items-center justify-between px-1 shrink-0 pb-1">
                                         <div className="flex items-center gap-2">
                                             <h3 className={`text-[15px] font-bold ${theme.text}`}>{column.title}</h3>
                                             <Badge variant="secondary" className={`rounded-full h-5 px-2 text-[10px] font-bold shadow-sm ${theme.badge}`}>
                                                 {column.tasks.length}
                                             </Badge>
                                         </div>
+                                        <Button variant="ghost" size="icon" className={`size-8 hover:bg-white/50 text-slate-400 hover:${theme.text} rounded-lg transition-colors`}>
+                                            <MoreHorizontal className="size-4" />
+                                        </Button>
                                     </div>
 
                                     {/* Droppable Area */}
@@ -249,7 +201,7 @@ export default function TasksPage() {
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.droppableProps}
-                                                className={`flex flex-col gap-3 flex-1 min-h-0 h-full overflow-y-auto px-1 pb-2 rounded-xl transition-colors hover-scrollbar ${snapshot.isDraggingOver ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""
+                                                className={`flex flex-col gap-3 h-full overflow-y-auto px-1 pb-2 rounded-xl transition-colors no-scrollbar ${snapshot.isDraggingOver ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""
                                                     }`}
                                             >
                                                 {column.tasks.map((task, index) => (
@@ -259,9 +211,8 @@ export default function TasksPage() {
                                                                 ref={provided.innerRef}
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
-                                                                className="relative"
                                                                 style={{
-                                                                    ...clampDragStyle(provided.draggableProps.style, snapshot.isDragging),
+                                                                    ...provided.draggableProps.style,
                                                                     opacity: snapshot.isDragging ? 0.9 : 1,
                                                                     zIndex: snapshot.isDragging ? 10 : 1,
                                                                 }}
@@ -271,12 +222,20 @@ export default function TasksPage() {
                                                                         }`}
                                                                 >
                                                                     <CardContent className="p-3">
-                                                                        {/* Card Top: Title & Priority */}
-                                                                        <div className="space-y-2">
+                                                                        <div className="space-y-3">
                                                                             <div className="flex justify-between items-start">
-                                                                                <h4 className="text-sm font-bold text-slate-900 leading-snug group-hover:text-primary transition-colors pr-2">
-                                                                                    {task.title}
+                                                                                <h4 className="text-sm font-bold text-slate-900 leading-snug transition-colors pr-2">
+                                                                                    <Link 
+                                                                                        to={`/deals/${task.id}`} 
+                                                                                        state={{ title: task.title }}
+                                                                                        className="hover:text-primary transition-colors cursor-pointer"
+                                                                                    >
+                                                                                        {task.title}
+                                                                                    </Link>
                                                                                 </h4>
+                                                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                                                                    <MoreHorizontal className="size-4 text-slate-400 cursor-pointer hover:text-primary" />
+                                                                                </div>
                                                                             </div>
 
                                                                             <div className="flex flex-col gap-1.5">
@@ -306,8 +265,6 @@ export default function TasksPage() {
                                                     </Draggable>
                                                 ))}
                                                 {provided.placeholder}
-
-
                                             </div>
                                         )}
                                     </Droppable>
@@ -320,4 +277,3 @@ export default function TasksPage() {
         </div>
     )
 }
-

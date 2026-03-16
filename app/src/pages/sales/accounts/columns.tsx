@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+
 import { MoreHorizontal } from "lucide-react"
 import {
     DropdownMenu,
@@ -8,19 +9,15 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-
-export type Lead = {
+export type Account = {
     name: string
-    company: string
-    email: string
+    industry: string
+    website: string
     phone: string
-    status: "New" | "Working" | "Qualified"
     owner: string
 }
 
-
-
-export const columns: ColumnDef<Lead>[] = [
+export const columns: ColumnDef<Account>[] = [
     {
         id: "actions",
         header: () => null,
@@ -56,7 +53,7 @@ export const columns: ColumnDef<Lead>[] = [
             <Checkbox
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label={`Select lead ${row.original.name}`}
+                aria-label={`Select account ${row.original.name}`}
             />
         ),
         enableSorting: false,
@@ -65,26 +62,19 @@ export const columns: ColumnDef<Lead>[] = [
     },
     {
         accessorKey: "name",
-        header: "Lead Name",
-        cell: ({ row }) => (
-            <span className="font-semibold text-slate-900">{row.original.name}</span>
-        ),
-    },
-    {
-        accessorKey: "company",
-        header: "Company",
-    },
-    {
-        accessorKey: "email",
-        header: "Email",
+        header: "Account Name",
+        cell: ({ row }) => <span className="font-semibold text-slate-900">{row.original.name}</span>,
     },
     {
         accessorKey: "phone",
         header: "Phone",
     },
     {
-        accessorKey: "owner",
-        header: "Sales Owner",
+        accessorKey: "website",
+        header: "Website",
     },
-
+    {
+        accessorKey: "owner",
+        header: "Account Owner",
+    },
 ]

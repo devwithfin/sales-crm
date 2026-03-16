@@ -1,5 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+
 import { MoreHorizontal } from "lucide-react"
 import {
     DropdownMenu,
@@ -8,19 +10,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-
-export type Lead = {
+export type Role = {
+    id: string
     name: string
-    company: string
-    email: string
-    phone: string
-    status: "New" | "Working" | "Qualified"
-    owner: string
+    description: string
+    userCount: number
 }
 
-
-
-export const columns: ColumnDef<Lead>[] = [
+export const columns: ColumnDef<Role>[] = [
     {
         id: "actions",
         header: () => null,
@@ -56,7 +53,7 @@ export const columns: ColumnDef<Lead>[] = [
             <Checkbox
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label={`Select lead ${row.original.name}`}
+                aria-label={`Select role ${row.original.name}`}
             />
         ),
         enableSorting: false,
@@ -65,26 +62,21 @@ export const columns: ColumnDef<Lead>[] = [
     },
     {
         accessorKey: "name",
-        header: "Lead Name",
+        header: "Role Name",
+        cell: ({ row }) => <span className="font-semibold text-slate-900">{row.original.name}</span>,
+    },
+    {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => <span className="text-slate-500 text-sm line-clamp-1">{row.original.description}</span>,
+    },
+    {
+        accessorKey: "userCount",
+        header: "Users",
         cell: ({ row }) => (
-            <span className="font-semibold text-slate-900">{row.original.name}</span>
+            <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-none font-medium">
+                {row.original.userCount} Users
+            </Badge>
         ),
     },
-    {
-        accessorKey: "company",
-        header: "Company",
-    },
-    {
-        accessorKey: "email",
-        header: "Email",
-    },
-    {
-        accessorKey: "phone",
-        header: "Phone",
-    },
-    {
-        accessorKey: "owner",
-        header: "Sales Owner",
-    },
-
 ]

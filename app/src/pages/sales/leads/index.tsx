@@ -1,9 +1,11 @@
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { LeadsDataTable } from "@/pages/sales/leads/data-table"
 import { columns, type Lead } from "@/pages/sales/leads/columns"
+import { cn } from "@/lib/utils"
 
 const leads: Lead[] = [
     {
@@ -142,12 +144,15 @@ export default function LeadsPage() {
                     className="border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
             </div>
-            <Button
-                asChild
-                className="rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
+            <Link
+                to="/leads/create"
+                className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
+                )}
             >
-                <a href="/leads/create">Create Lead</a>
-            </Button>
+                Create Lead
+            </Link>
         </div>
     )
 

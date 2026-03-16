@@ -1,15 +1,16 @@
-import { useNavigate } from "react-router-dom"
-import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useNavigate } from "react-router-dom"
+import { ChevronLeft } from "lucide-react"
 
-export default function LeadCreatePage() {
+export default function ContactCreatePage() {
     const navigate = useNavigate()
 
     return (
         <div className="flex flex-col pb-10">
+            {/* Header */}
             <div className="sticky -top-6 z-10 -mx-4 md:-mx-8 bg-slate-50 py-3 border-b border-slate-200 px-4 md:px-8 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Button 
@@ -20,24 +21,20 @@ export default function LeadCreatePage() {
                     >
                         <ChevronLeft className="size-5" />
                     </Button>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create Lead</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create Contact</h1>
                 </div>
                 <Button className="rounded-lg px-6 py-5 font-bold shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all">Save</Button>
             </div>
 
-            {/* Section 1: Lead Information */}
+            {/* Section 1: Contact Information */}
             <Card className="mt-4 border border-slate-200 rounded-3xl">
                 <CardHeader>
-                    <CardTitle className="text-base font-semibold text-slate-800">Lead Information</CardTitle>
+                    <CardTitle className="text-base font-semibold text-slate-800">Contact Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Lead Owner</label>
-                            <Input className="py-5 flex-1" />
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Company</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Contact Owner</label>
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
@@ -49,11 +46,19 @@ export default function LeadCreatePage() {
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
+                            <label className="text-sm font-medium text-slate-600 w-32">Account Name</label>
+                            <Input className="py-5 flex-1" />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <label className="text-sm font-medium text-slate-600 w-32">Email</label>
+                            <Input type="email" className="py-5 flex-1" />
+                        </div>
+                        <div className="flex items-center gap-4">
                             <label className="text-sm font-medium text-slate-600 w-32">Phone</label>
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Mobile</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Department</label>
                             <Input className="py-5 flex-1" />
                         </div>
                     </div>
@@ -68,27 +73,23 @@ export default function LeadCreatePage() {
                 <CardContent className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Street</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Mailing Street</label>
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">District</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Mailing City</label>
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Sub District</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Mailing State</label>
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">City</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Mailing Zip</label>
                             <Input className="py-5 flex-1" />
                         </div>
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Country</label>
-                            <Input className="py-5 flex-1" />
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium text-slate-600 w-32">Zip Code</label>
+                            <label className="text-sm font-medium text-slate-600 w-32">Mailing Country</label>
                             <Input className="py-5 flex-1" />
                         </div>
                     </div>

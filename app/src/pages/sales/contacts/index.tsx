@@ -1,9 +1,11 @@
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { ContactsDataTable } from "@/pages/sales/contacts/data-table"
 import { columns, type Contact } from "@/pages/sales/contacts/columns"
+import { cn } from "@/lib/utils"
 
 const contacts: Contact[] = [
     {
@@ -92,9 +94,15 @@ export default function ContactsPage() {
                     className="border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
             </div>
-            <Button className="rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all">
+            <Link
+                to="/contacts/create"
+                className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
+                )}
+            >
                 Create Contact
-            </Button>
+            </Link>
         </div>
     )
 
