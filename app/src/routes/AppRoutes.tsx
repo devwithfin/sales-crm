@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import AppLayout from "@/layouts/AppLayout"
 import DashboardPage from "@/pages/general/Dashboard"
 import LoginPage from "@/pages/auth/Login"
+import RequireAuth from "@/components/RequireAuth"
 
 // General
 import ReportsPage from "@/pages/general/Reports"
@@ -41,8 +42,9 @@ export default function AppRoutes() {
             <Route path="/login" element={<LoginPage />} />
 
             {/* Dashboard Routes - With Layout */}
-            <Route element={<AppLayout />}>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route element={<RequireAuth />}>
+                <Route element={<AppLayout />}>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
 
@@ -68,11 +70,12 @@ export default function AppRoutes() {
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/create" element={<UserCreatePage />} />
 
-                <Route path="/profile/my-account" element={<MyAccountPage />} />
+                    <Route path="/profile/my-account" element={<MyAccountPage />} />
+                </Route>
             </Route>
 
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     )
 }

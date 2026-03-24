@@ -1,5 +1,5 @@
 import { Bell, User, LogOut, Search } from "lucide-react"
-import { useLocation, Link } from "react-router-dom"
+import { useLocation, Link, useNavigate } from "react-router-dom"
 import { menuData } from "@/constants/menuData"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,9 +14,12 @@ import {
     AvatarFallback,
     AvatarImage,
 } from "@/components/ui/avatar"
+import { API_BASE_URL } from "@/constants/env"
+import { useCallback } from "react"
 
 export function AppNavbar() {
     const location = useLocation()
+    const navigate = useNavigate()
 
     // Find the current menu item title based on the URL
     const currentMenuItem = menuData
@@ -25,6 +28,24 @@ export function AppNavbar() {
         .find(item => location.pathname === item.url || location.pathname.startsWith(`${item.url}/`))
 
     const pageTitle = currentMenuItem ? currentMenuItem.title : "Dashboard"
+
+    const handleSignOut = useCallback(async () => {
+        const token = localStorage.getItem("token")
+        try {
+            await fetch(`${API_BASE_URL}/logout`, {
+                method: "POST",
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : "",
+                },
+            })
+        } catch (error) {
+            console.error("Failed to call logout endpoint", error)
+        } finally {
+            localStorage.removeItem("token")
+            localStorage.removeItem("user")
+            navigate("/login", { replace: true })
+        }
+    }, [navigate])
 
     return (
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 sticky top-0 bg-white z-50 justify-between shadow-sm">
@@ -65,7 +86,9 @@ export function AppNavbar() {
 
                         <DropdownMenuSeparator className="my-1 border-t border-slate-100" />
 
-                        <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer rounded-lg text-red-600 hover:bg-red-50 transition-colors outline-none">
+                        <DropdownMenuItem
+                            onClick={handleSignOut}
+                            className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer rounded-lg text-red-600 hover:bg-red-50 transition-colors outline-none">
                             <LogOut className="size-4" />
                             <span className="text-sm font-bold">Sign Out</span>
                         </DropdownMenuItem>

@@ -1,12 +1,58 @@
-import { useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, Mail, Eye, EyeOff } from "lucide-react"
 import { COMPANY_LOGO_PATH } from "@/constants/branding"
+import { API_BASE_URL } from "@/constants/env"
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const navigate = useNavigate()
+    const location = useLocation()
+    const redirectPath = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/dashboard"
+
+    useEffect(() => {
+        const token = localStorage.getItem("token")
+        if (token) {
+            navigate(redirectPath, { replace: true })
+        }
+    }, [navigate, redirectPath])
+
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        setIsSubmitting(true)
+        setError(null)
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+            })
+
+            if (!response.ok) {
+                const message = (await response.json())?.message ?? "Failed to sign in"
+                throw new Error(message)
+            }
+
+            const data = await response.json()
+            localStorage.setItem("token", data.accessToken)
+            localStorage.setItem("user", JSON.stringify(data.user))
+            navigate(redirectPath, { replace: true })
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unexpected error, please try again")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
     return (
         <div className="flex min-h-screen w-full bg-background overflow-hidden">
@@ -63,12 +109,15 @@ export default function LoginPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="px-8 space-y-5">
-                            <div className="space-y-4">
+                            <form className="space-y-4" onSubmit={handleSubmit}>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
                                     <div className="relative group">
                                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4.5 text-slate-400 group-focus-within:text-primary transition-colors" />
                                         <Input
+                                            type="email"
+                                            value={email}
+                                            onChange={event => setEmail(event.target.value)}
                                             placeholder="name@company.com"
                                             className="h-12 pl-11 rounded-2xl bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:ring-primary/20 transition-all font-medium"
                                         />
@@ -82,6 +131,8 @@ export default function LoginPage() {
                                         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4.5 text-slate-400 group-focus-within:text-primary transition-colors" />
                                         <Input
                                             type={showPassword ? "text" : "password"}
+                                            value={password}
+                                            onChange={event => setPassword(event.target.value)}
                                             placeholder="••••••••"
                                             className="h-12 pl-11 pr-11 rounded-2xl bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:ring-primary/20 transition-all font-medium"
                                         />
@@ -93,12 +144,17 @@ export default function LoginPage() {
                                         </button>
                                     </div>
                                 </div>
-                            </div>
+                                {error ? (
+                                    <p className="text-sm font-medium text-red-500 text-center">{error}</p>
+                                ) : null}
 
-
-                            <Button className="w-full h-12 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform active:scale-[0.98]">
-                                Sign In
-                            </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isSubmitting || !email || !password}
+                                    className="w-full h-12 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
+                                    {isSubmitting ? "Signing In..." : "Sign In"}
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
                 </div>
