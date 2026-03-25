@@ -13,11 +13,12 @@ datasource db {
 }
 
 model Role {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  users     User[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String            @id @default(uuid())
+  name         String            @unique
+  users        User[]
+  permissions  RolePermission[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 }
 
 model User {
@@ -29,4 +30,40 @@ model User {
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Menu {
+  id             String    @id @default(uuid())
+  menuName       String
+  menuOrder      Int
+  menuLevel      Int
+  menuIcon       String?
+  menuLink       String?
+  modelName      String?   @unique
+  permissionName String?
+  permission     Permission? @relation(fields: [permissionName], references: [name])
+  parentId       String?
+  parent         Menu?       @relation("MenuHierarchy", fields: [parentId], references: [id])
+  children       Menu[]      @relation("MenuHierarchy")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Permission {
+  id           String            @id @default(uuid())
+  name         String            @unique
+  menus        Menu[]
+  roles        RolePermission[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@id([roleId, permissionId])
 }

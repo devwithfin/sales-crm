@@ -1,6 +1,5 @@
 import { Bell, User, LogOut, Search } from "lucide-react"
 import { useLocation, Link, useNavigate } from "react-router-dom"
-import { menuData } from "@/constants/menuData"
 import { Input } from "@/components/ui/input"
 import {
     DropdownMenu,
@@ -15,37 +14,64 @@ import {
     AvatarImage,
 } from "@/components/ui/avatar"
 import { API_BASE_URL } from "@/constants/env"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
+import { useToast } from "@/context/toast"
+import { useMenuData, type MenuNode } from "@/context/menu"
+
+function flattenMenuNodes(menus: MenuNode[]) {
+    const flattened: Array<{ title: string; url: string }> = []
+
+    const traverse = (node: MenuNode) => {
+        if (node.link) {
+            flattened.push({ title: node.name, url: node.link })
+        }
+
+        node.children.forEach(traverse)
+    }
+
+    menus.forEach(traverse)
+
+    return flattened.sort((a, b) => b.url.length - a.url.length)
+}
 
 export function AppNavbar() {
     const location = useLocation()
     const navigate = useNavigate()
+    const { showToast } = useToast()
+    const { menus } = useMenuData()
+
+    const menuItems = useMemo(() => flattenMenuNodes(menus), [menus])
 
     // Find the current menu item title based on the URL
-    const currentMenuItem = menuData
-        .flatMap(group => group.items)
-        .sort((a, b) => b.url.length - a.url.length)
-        .find(item => location.pathname === item.url || location.pathname.startsWith(`${item.url}/`))
+    const currentMenuItem = menuItems.find(
+        item => location.pathname === item.url || location.pathname.startsWith(`${item.url}/`)
+    )
 
     const pageTitle = currentMenuItem ? currentMenuItem.title : "Dashboard"
 
     const handleSignOut = useCallback(async () => {
         const token = localStorage.getItem("token")
         try {
-            await fetch(`${API_BASE_URL}/logout`, {
+            const response = await fetch(`${API_BASE_URL}/logout`, {
                 method: "POST",
                 headers: {
                     Authorization: token ? `Bearer ${token}` : "",
                 },
             })
+            if (!response.ok) {
+                throw new Error("Failed to sign out, please try again")
+            }
+            showToast({ type: "success", message: "You have been signed out" })
         } catch (error) {
             console.error("Failed to call logout endpoint", error)
+            const message = error instanceof Error ? error.message : "Could not reach logout service"
+            showToast({ type: "error", message })
         } finally {
             localStorage.removeItem("token")
             localStorage.removeItem("user")
             navigate("/login", { replace: true })
         }
-    }, [navigate])
+    }, [navigate, showToast])
 
     return (
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 sticky top-0 bg-white z-50 justify-between shadow-sm">

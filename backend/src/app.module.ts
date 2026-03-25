@@ -4,9 +4,19 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AppService } from './app.service';
+import { MenusModule } from './modules/menus/menus.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    MenusModule,
+    PermissionsModule,
+    RolesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
