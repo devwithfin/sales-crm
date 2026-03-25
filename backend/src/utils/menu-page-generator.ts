@@ -73,7 +73,7 @@ type GeneratedRoute = {
     Component: LazyExoticComponent<() => JSX.Element>
 }
 
-export const generatedMenuRoutes: GeneratedRoute[] = [
+export const genMenuRoutes: GeneratedRoute[] = [
 ${entries}
 ]
 `;
@@ -83,10 +83,9 @@ async function ensureStub(
   menu: MenuRecord,
   generatedDir: string,
 ) {
-  const targetDir = path.join(generatedDir, menu.modelName!);
-  const filePath = path.join(targetDir, 'index.tsx');
+  const filePath = path.join(generatedDir, `${menu.modelName}.tsx`);
 
-  await fs.mkdir(targetDir, { recursive: true });
+  await fs.mkdir(generatedDir, { recursive: true });
 
   const alreadyExists = await fileExists(filePath);
   if (alreadyExists) {
@@ -105,7 +104,7 @@ export async function generateMenuPages(
   const generatedPagesDir = path.join(appSrcDir, 'pages/generated');
   const routesFile = path.join(
     appSrcDir,
-    'routes/generated-menu-routes.tsx',
+    'routes/GenMenuRoutes.tsx',
   );
 
   const menus = await prisma.menu.findMany({
@@ -144,7 +143,7 @@ type GeneratedRoute = {
     Component: LazyExoticComponent<() => JSX.Element>
 }
 
-export const generatedMenuRoutes: GeneratedRoute[] = []
+export const genMenuRoutes: GeneratedRoute[] = []
 `,
       'utf8',
     );
