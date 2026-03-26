@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Injectable()
 export class RolesService {
@@ -24,6 +26,7 @@ export class RolesService {
     return roles.map((role) => ({
       id: role.id,
       name: role.name,
+      description: role.description,
       userCount: role._count.users,
     }));
   }
@@ -40,6 +43,87 @@ export class RolesService {
     return {
       id: role.id,
       name: role.name,
+      description: role.description,
+    };
+  }
+
+  private normalizeRolePayload(dto: {
+    name?: string | null;
+    description?: string | null;
+  }) {
+    const name = dto.name?.trim();
+    const description = dto.description?.trim();
+
+    if (!name) {
+      throw new BadRequestException('Role name is required');
+    }
+
+    return {
+      name,
+      description: description ? description : null,
+    };
+  }
+
+  async create(dto: CreateRoleDto) {
+    const payload = this.normalizeRolePayload(dto);
+
+    const existing = await this.prisma.role.findUnique({
+      where: { name: payload.name },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Role with this name already exists');
+    }
+
+    const role = await this.prisma.role.create({
+      data: {
+        name: payload.name,
+        description: payload.description,
+      },
+    });
+
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+    };
+  }
+
+  async update(roleId: string, dto: UpdateRoleDto) {
+    const role = await this.prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    const payload = this.normalizeRolePayload(dto);
+
+    if (payload.name !== role.name) {
+      const existing = await this.prisma.role.findUnique({
+        where: { name: payload.name },
+        select: { id: true },
+      });
+
+      if (existing) {
+        throw new BadRequestException('Role with this name already exists');
+      }
+    }
+
+    const updated = await this.prisma.role.update({
+      where: { id: roleId },
+      data: {
+        name: payload.name,
+        description: payload.description,
+      },
+    });
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      description: updated.description,
     };
   }
 
@@ -131,9 +215,7 @@ export class RolesService {
     }
 
     if (role._count.users > 0) {
-      throw new BadRequestException(
-        'Role is still assigned to existing users',
-      );
+      throw new BadRequestException('Role is still assigned to existing users');
     }
 
     await this.prisma.$transaction(async (transaction) => {

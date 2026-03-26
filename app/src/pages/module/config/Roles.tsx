@@ -58,7 +58,6 @@ export default function RolesPage() {
 
         void run()
     }, [loadRoles, showToast])
-
     const canCreate = hasPermission("role-create")
     const canEdit = hasPermission("role-edit")
     const canDelete = hasPermission("role-delete")
@@ -137,10 +136,10 @@ export default function RolesPage() {
                         to="/roles/create"
                         className={cn(
                             buttonVariants({ variant: "default" }),
-                            "rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all gap-2"
+                            "rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
                         )}
                     >
-                        <Plus className="size-4" /> Create Role
+                        Create
                     </Link>
                 ) : null}
             </div>
@@ -150,10 +149,6 @@ export default function RolesPage() {
 
     return (
         <div className="flex flex-col gap-6 pb-10">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Role Management</h1>
-                <p className="text-sm text-slate-500">Manage access by granting permissions per role.</p>
-            </div>
             {isLoading ? (
                 <p className="text-sm text-slate-500">Loading roles...</p>
             ) : (

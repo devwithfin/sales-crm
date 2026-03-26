@@ -1,58 +1,134 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Link } from "react-router-dom"
+import { MoreHorizontal } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 export type MenuRow = {
     id: string
     name: string
     level: number
+    order: number
     link: string | null
+    icon: string | null
+    permission: string | null
     isGroup: boolean
     model: string | null
+    parentId: string | null
+    parentName: string | null
+    children?: MenuRow[]
 }
 
-export function createMenuColumns(): ColumnDef<MenuRow>[] {
-    return [
+type ColumnOptions = {
+    enableEdit: boolean
+    enableDelete: boolean
+    onDelete?: (menu: MenuRow) => void
+    deletingId?: string | null
+}
+
+export function createMenuColumns({ enableEdit, enableDelete, onDelete, deletingId }: ColumnOptions): ColumnDef<MenuRow>[] {
+    const baseColumns: ColumnDef<MenuRow>[] = [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={(table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")) as any}
+                    onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={value => row.toggleSelected(!!value)}
+                    aria-label={`Select menu ${row.original.name}`}
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 10,
+        },
         {
             accessorKey: "name",
             header: "Menu Name",
             cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="font-semibold text-slate-900">{row.original.name}</span>
-                    <span className="text-xs text-slate-400">Level {row.original.level}</span>
-                </div>
+                <span className="font-semibold text-slate-900">{row.original.name}</span>
             ),
         },
         {
-            accessorKey: "type",
-            header: "Type",
-            cell: ({ row }) =>
-                row.original.isGroup ? (
-                    <Badge variant="outline" className="border-slate-200 text-slate-600">
-                        Group
-                    </Badge>
-                ) : (
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-none">
-                        Link
-                    </Badge>
-                ),
+            accessorKey: "level",
+            header: "Menu Level",
+            cell: ({ row }) => (
+                <span className="text-sm text-slate-600">
+                    {row.original.level}
+                </span>
+            ),
+        },
+        {
+            id: "parent",
+            header: "Menu Parent",
+            cell: ({ row }) => (
+                <span className="text-sm text-slate-600">
+                    {row.original.parentName || "-"}
+                </span>
+            ),
         },
         {
             accessorKey: "link",
             header: "Menu Link",
             cell: ({ row }) => (
-                <span className={`text-sm ${row.original.link ? "text-slate-600" : "text-slate-400 italic"}`}>
-                    {row.original.link || "No link"}
+                <span className={`text-sm ${row.original.link ? "text-slate-600" : "text-slate-400"}`}>
+                    {row.original.link || "-"}
                 </span>
             ),
         },
-        {
-            accessorKey: "model",
-            header: "Model Key",
-            cell: ({ row }) => (
-                <code className="text-xs font-semibold text-slate-600 bg-slate-100 rounded px-2 py-0.5">
-                    {row.original.model || "-"}
-                </code>
-            ),
-        },
     ]
+
+    if (!enableEdit && !enableDelete) {
+        return baseColumns
+    }
+
+    const actionColumn: ColumnDef<MenuRow> = {
+        id: "actions",
+        header: () => null,
+        cell: ({ row }) => (
+            <DropdownMenu>
+                <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md border-none flex items-center justify-center outline-none cursor-pointer">
+                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-36 rounded-xl p-1 shadow-md bg-white border border-slate-200">
+                    {enableEdit ? (
+                        <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer rounded-lg hover:bg-slate-50 transition-colors outline-none text-slate-700">
+                            <Link to={`/menus/${row.original.id}/edit`} className="w-full text-sm font-medium">
+                                Edit
+                            </Link>
+                        </DropdownMenuItem>
+                    ) : null}
+                    {enableDelete ? (
+                        <DropdownMenuItem
+                            className={cn(
+                                "flex items-center px-3 py-2 cursor-pointer rounded-lg text-red-600 hover:bg-red-50 transition-colors outline-none font-semibold text-sm",
+                                deletingId === row.original.id && "opacity-50 pointer-events-none"
+                            )}
+                            onSelect={event => {
+                                event.preventDefault()
+                                if (deletingId === row.original.id) {
+                                    return
+                                }
+                                onDelete?.(row.original)
+                            }}
+                        >
+                            Delete
+                        </DropdownMenuItem>
+                    ) : null}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 10,
+    }
+
+    return [actionColumn, ...baseColumns]
 }

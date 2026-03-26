@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 export type Role = {
     id: string
     name: string
+    description?: string | null
     userCount: number
 }
 

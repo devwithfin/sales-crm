@@ -1,7 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { PencilLine } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 export type PermissionRow = {
     id: string
@@ -37,11 +38,21 @@ export type PermissionGroupRow = {
 }
 
 type ColumnOptions = {
+    enableEdit?: boolean
+    enableDelete?: boolean
     onEdit?: (group: PermissionGroupRow) => void
+    onDelete?: (group: PermissionGroupRow) => void
+    deletingId?: string | null
 }
 
-export function createPermissionGroupColumns({ onEdit }: ColumnOptions): ColumnDef<PermissionGroupRow>[] {
-    const columns: ColumnDef<PermissionGroupRow>[] = [
+export function createPermissionGroupColumns({
+    enableEdit,
+    enableDelete,
+    onEdit,
+    onDelete,
+    deletingId,
+}: ColumnOptions): ColumnDef<PermissionGroupRow>[] {
+    const baseColumns: ColumnDef<PermissionGroupRow>[] = [
         {
             accessorKey: "resource",
             header: "Resource",
@@ -76,23 +87,58 @@ export function createPermissionGroupColumns({ onEdit }: ColumnOptions): ColumnD
         },
     ]
 
-    columns.push({
+    if (!enableEdit && !enableDelete) {
+        return baseColumns
+    }
+
+    const actionColumn: ColumnDef<PermissionGroupRow> = {
         id: "actions",
-        header: "Actions",
+        header: () => null,
         enableSorting: false,
         enableHiding: false,
         cell: ({ row }) => (
-            <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => onEdit?.(row.original)}
-            >
-                <PencilLine className="size-3.5 mr-1.5" /> Edit
-            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md border-none flex items-center justify-center outline-none cursor-pointer">
+                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-40 rounded-xl p-1 shadow-md bg-white border border-slate-200">
+                    {enableEdit ? (
+                        <DropdownMenuItem
+                            className="flex items-center px-3 py-2 cursor-pointer rounded-lg font-medium hover:bg-slate-50 transition-colors outline-none text-slate-700"
+                            onClick={event => {
+                                event.preventDefault()
+                                onEdit?.(row.original)
+                            }}
+                            onSelect={event => {
+                                event.preventDefault()
+                                onEdit?.(row.original)
+                            }}
+                        >
+                            Edit
+                        </DropdownMenuItem>
+                    ) : null}
+                    {enableDelete ? (
+                        <DropdownMenuItem
+                            className={cn(
+                                "flex items-center px-3 py-2 cursor-pointer rounded-lg text-red-600 hover:bg-red-50 transition-colors outline-none font-semibold text-sm",
+                                deletingId === row.original.resource && "opacity-50 pointer-events-none"
+                            )}
+                            onSelect={event => {
+                                event.preventDefault()
+                                if (deletingId === row.original.resource) {
+                                    return
+                                }
+                                onDelete?.(row.original)
+                            }}
+                        >
+                            Delete
+                        </DropdownMenuItem>
+                    ) : null}
+                </DropdownMenuContent>
+            </DropdownMenu>
         ),
-    })
+        size: 10,
+    }
 
-    return columns
+    return [actionColumn, ...baseColumns]
 }

@@ -56,10 +56,7 @@ export class MenusService {
       ],
     });
 
-    const menuMap = new Map<
-      string,
-      MenuNode & { parentId: string | null }
-    >();
+    const menuMap = new Map<string, MenuNode & { parentId: string | null }>();
     const roots: MenuNode[] = [];
 
     menus.forEach((menu) => {
@@ -111,12 +108,17 @@ export class MenusService {
         };
       }
 
-      if (!hasPermission) {
+      // If node has permission, check if user has it
+      if (node.permission && !hasPermission) {
         return null;
       }
 
+      // If node has no permission and no children, include it (it's a parent category)
       if (!node.permission) {
-        return null;
+        return {
+          ...node,
+          children: [],
+        };
       }
 
       return {
@@ -128,6 +130,55 @@ export class MenusService {
     return roots
       .map(filterTree)
       .filter((node): node is MenuNode => Boolean(node));
+  }
+
+  async getAllMenus(): Promise<MenuNode[]> {
+    const menus = await this.prisma.menu.findMany({
+      orderBy: [
+        { menuLevel: 'asc' },
+        { menuOrder: 'asc' },
+        { createdAt: 'asc' },
+      ],
+    });
+
+    const menuMap = new Map<string, MenuNode & { parentId: string | null }>();
+    const roots: MenuNode[] = [];
+
+    menus.forEach((menu) => {
+      menuMap.set(menu.id, {
+        id: menu.id,
+        name: menu.menuName,
+        level: menu.menuLevel,
+        order: menu.menuOrder,
+        icon: menu.menuIcon ?? null,
+        link: menu.menuLink ?? null,
+        model: menu.modelName ?? null,
+        permission: menu.permissionName ?? null,
+        parentId: menu.parentId ?? null,
+        children: [],
+      });
+    });
+
+    menuMap.forEach((node) => {
+      if (node.parentId) {
+        const parent = menuMap.get(node.parentId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      } else {
+        roots.push(node);
+      }
+    });
+
+    const sortTree = (node: MenuNode) => {
+      node.children.sort((a, b) => a.order - b.order);
+      node.children.forEach(sortTree);
+    };
+
+    roots.sort((a, b) => a.order - b.order);
+    roots.forEach(sortTree);
+
+    return roots;
   }
 
   private normalizePermissionName(menuLink?: string | null): string | null {
@@ -306,5 +357,89 @@ export class MenusService {
     void this.menuPageGenerator.regenerate();
 
     return { success: true };
+  }
+
+  async getMenuById(id: string) {
+    const menu = await this.prisma.menu.findUnique({
+      where: { id },
+    });
+
+    if (!menu) {
+      throw new NotFoundException('Menu not found');
+    }
+
+    return {
+      id: menu.id,
+      menuName: menu.menuName,
+      menuLevel: menu.menuLevel,
+      menuOrder: menu.menuOrder,
+      menuIcon: menu.menuIcon,
+      menuLink: menu.menuLink,
+      parentId: menu.parentId,
+      modelName: menu.modelName,
+      permissionName: menu.permissionName,
+    };
+  }
+
+  async updateMenu(id: string, dto: CreateMenuDto) {
+    const existingMenu = await this.prisma.menu.findUnique({
+      where: { id },
+    });
+
+    if (!existingMenu) {
+      throw new NotFoundException('Menu not found');
+    }
+
+    if (dto.parentId) {
+      const parent = await this.prisma.menu.findUnique({
+        where: { id: dto.parentId },
+      });
+
+      if (!parent) {
+        throw new BadRequestException('Parent menu not found');
+      }
+
+      // Prevent setting self as parent
+      if (dto.parentId === id) {
+        throw new BadRequestException('Menu cannot be its own parent');
+      }
+    }
+
+    const permissionName =
+      dto.permissionName ?? this.normalizePermissionName(dto.menuLink);
+    const modelName = this.normalizeModelName(dto.modelName);
+
+    if (dto.menuLink && !modelName) {
+      throw new BadRequestException(
+        'Model name is required when menu link is provided',
+      );
+    }
+
+    const updatedMenu = await this.prisma.menu.update({
+      where: { id },
+      data: {
+        menuName: dto.menuName?.trim() ?? existingMenu.menuName,
+        menuOrder: dto.menuOrder ?? existingMenu.menuOrder,
+        menuLevel: dto.menuLevel ?? existingMenu.menuLevel,
+        menuIcon: dto.menuIcon?.trim() ?? existingMenu.menuIcon,
+        menuLink: dto.menuLink?.trim() ?? existingMenu.menuLink,
+        modelName: modelName ?? existingMenu.modelName,
+        permissionName: permissionName ?? existingMenu.permissionName,
+        parentId: dto.parentId ?? existingMenu.parentId,
+      },
+    });
+
+    void this.menuPageGenerator.regenerate();
+
+    return {
+      id: updatedMenu.id,
+      menuName: updatedMenu.menuName,
+      menuLevel: updatedMenu.menuLevel,
+      menuOrder: updatedMenu.menuOrder,
+      menuIcon: updatedMenu.menuIcon,
+      menuLink: updatedMenu.menuLink,
+      parentId: updatedMenu.parentId,
+      modelName: updatedMenu.modelName,
+    };
   }
 }

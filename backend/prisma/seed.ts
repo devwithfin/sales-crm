@@ -129,7 +129,7 @@ async function main() {
     },
   });
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'm';
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@crm.local';
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'password123';
 
   const existingUser = await prisma.user.findUnique({
@@ -265,7 +265,7 @@ async function main() {
           order: 1,
           icon: 'menu',
           link: '/menus',
-          permission: 'menu-view',
+          permission: 'menus-view',
         },
         {
           name: 'Permission',
@@ -273,7 +273,7 @@ async function main() {
           order: 2,
           icon: 'shield',
           link: '/permissions',
-          permission: 'permission-view',
+          permission: 'permissions-view',
         },
         {
           name: 'Roles',
@@ -281,7 +281,7 @@ async function main() {
           order: 3,
           icon: 'user-cog',
           link: '/roles',
-          permission: 'role-view',
+          permission: 'roles-view',
         },
         {
           name: 'Users',
@@ -308,9 +308,10 @@ async function main() {
       menuIcon: definition.icon ?? null,
       menuLink: definition.link ?? null,
       parentId,
-      permissionName:
-        definition.permission ??
-        (definition.link ? `${definition.slug}-view` : null),
+      // Only create permission for menus with links (actual pages)
+      permissionName: definition.link
+        ? definition.permission ?? `${definition.slug}-view`
+        : null,
       modelName: definition.slug,
     };
 
@@ -352,9 +353,36 @@ async function main() {
 
   const actions = ['view', 'create', 'edit', 'delete'] as const;
 
+  // Get all existing permissions to avoid duplicates
+  const existingPermissions = await prisma.permission.findMany({
+    select: { name: true },
+  });
+  const existingSet = new Set(existingPermissions.map((p) => p.name));
+
   for (const slug of menuSlugs) {
     for (const action of actions) {
-      await ensurePermission(`${slug}-${action}`);
+      const permName = `${slug}-${action}`;
+      // Skip if permission already exists (from menu definition)
+      if (!existingSet.has(permName)) {
+        await ensurePermission(permName);
+      }
+    }
+  }
+
+  // Clean up wrong permissions (e.g., 'menu-*' should be 'menus-*')
+  const wrongPermissionPatterns = ['menu-', 'permission-', 'role-'];
+  const allPermissions = await prisma.permission.findMany({
+    select: { id: true, name: true },
+  });
+  for (const perm of allPermissions) {
+    if (wrongPermissionPatterns.some((pattern) => perm.name.startsWith(pattern))) {
+      // Check if there's a correct version (plural) that exists
+      const correctPlural = perm.name.replace(/^menu-/, 'menus-').replace(/^permission-/, 'permissions-').replace(/^role-/, 'roles-');
+      if (existingSet.has(correctPlural)) {
+        // Delete the wrong permission
+        await prisma.permission.delete({ where: { id: perm.id } });
+        console.log(`Deleted wrong permission: ${perm.name}`);
+      }
     }
   }
 

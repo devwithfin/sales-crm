@@ -17,6 +17,7 @@ type MenuContextValue = {
     menus: MenuNode[]
     isLoading: boolean
     refresh: () => Promise<void>
+    fetchAllMenus: () => Promise<MenuNode[]>
 }
 
 const MenuContext = createContext<MenuContextValue | undefined>(undefined)
@@ -42,17 +43,46 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                 },
             })
 
+            console.log("[MenuContext] Response status:", response.status)
+
             if (!response.ok) {
-                throw new Error("Failed to load menus")
+                throw new Error(`Failed to load menus: ${response.status}`)
             }
 
             const data = (await response.json()) as MenuNode[]
+            console.log("[MenuContext] Got menus:", data.length)
             setMenus(Array.isArray(data) ? data : [])
         } catch (error) {
-            console.error("Failed to fetch menus", error)
+            console.error("[MenuContext] Failed to fetch menus", error)
             setMenus([])
         } finally {
             setIsLoading(false)
+        }
+    }, [])
+
+    const fetchAllMenus = useCallback(async (): Promise<MenuNode[]> => {
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            return []
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/menus/all`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to load all menus")
+            }
+
+            const data = (await response.json()) as MenuNode[]
+            return Array.isArray(data) ? data : []
+        } catch (error) {
+            console.error("Failed to fetch all menus", error)
+            return []
         }
     }, [])
 
@@ -65,8 +95,9 @@ export function MenuProvider({ children }: { children: ReactNode }) {
             menus,
             isLoading,
             refresh: fetchMenus,
+            fetchAllMenus,
         }),
-        [menus, isLoading, fetchMenus]
+        [menus, isLoading, fetchMenus, fetchAllMenus]
     )
 
     return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>

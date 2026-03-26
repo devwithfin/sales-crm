@@ -53,14 +53,12 @@ export default function ${componentName}() {
 `;
 }
 
-function createRoutesTemplate(
-  menus: MenuRecord[],
-) {
+function createRoutesTemplate(menus: MenuRecord[]) {
   const entries = menus
     .map(
       (menu) => `  {
     path: "${ensureLeadingSlash(menu.menuLink!)}",
-    Component: lazy(() => import("@/pages/generated/${menu.modelName}/index")),
+    Component: lazy(() => import("@/pages/generated/${menu.modelName}")),
   }`,
     )
     .join(',\n');
@@ -79,10 +77,7 @@ ${entries}
 `;
 }
 
-async function ensureStub(
-  menu: MenuRecord,
-  generatedDir: string,
-) {
+async function ensureStub(menu: MenuRecord, generatedDir: string) {
   const filePath = path.join(generatedDir, `${menu.modelName}.tsx`);
 
   await fs.mkdir(generatedDir, { recursive: true });
@@ -102,21 +97,14 @@ export async function generateMenuPages(
   const appSrcDir =
     options?.appSrcDir ?? path.resolve(process.cwd(), '../app/src');
   const generatedPagesDir = path.join(appSrcDir, 'pages/generated');
-  const routesFile = path.join(
-    appSrcDir,
-    'routes/GenMenuRoutes.tsx',
-  );
+  const routesFile = path.join(appSrcDir, 'routes/GenMenuRoutes.tsx');
 
   const menus = await prisma.menu.findMany({
     where: {
       menuLink: { not: null },
       modelName: { not: null },
     },
-    orderBy: [
-      { menuLevel: 'asc' },
-      { menuOrder: 'asc' },
-      { createdAt: 'asc' },
-    ],
+    orderBy: [{ menuLevel: 'asc' }, { menuOrder: 'asc' }, { createdAt: 'asc' }],
     select: {
       menuName: true,
       menuLink: true,

@@ -5,11 +5,14 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('roles')
@@ -21,9 +24,19 @@ export class RolesController {
     return this.rolesService.findAll();
   }
 
+  @Post()
+  create(@Body() dto: CreateRoleDto) {
+    return this.rolesService.create(dto);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.rolesService.findById(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
+    return this.rolesService.update(id, dto);
   }
 
   @Get(':id/permissions')
@@ -36,7 +49,10 @@ export class RolesController {
     @Param('id') id: string,
     @Body() body: UpdateRolePermissionsDto,
   ) {
-    return this.rolesService.updateRolePermissions(id, body.permissionIds ?? []);
+    return this.rolesService.updateRolePermissions(
+      id,
+      body.permissionIds ?? [],
+    );
   }
 
   @Delete(':id')

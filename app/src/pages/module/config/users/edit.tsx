@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,25 +14,35 @@ type Role = {
     description: string | null
 }
 
-export default function UserCreatePage() {
+type UserData = {
+    id: string
+    fullName: string
+    email: string
+    roleId: string
+    department: string
+    status: string
+}
+
+export default function UserEditPage() {
     const navigate = useNavigate()
+    const { id } = useParams<{ id: string }>()
     const { showToast } = useToast()
     const { hasPermission, isLoading: isPermissionLoading } = usePermissions()
-    const canCreate = hasPermission("users-create")
+    const canEdit = hasPermission("users-edit")
 
     const [roles, setRoles] = useState<Role[]>([])
     const [isLoadingRoles, setIsLoadingRoles] = useState(true)
-    const [formState, setFormState] = useState({
+    const [formState, setFormState] = useState<UserData>({
+        id: "",
         fullName: "",
         email: "",
-        password: "",
-        confirmPassword: "",
         roleId: "",
         department: "",
         status: "Active",
     })
+    const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
-    const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({})
+    const [errors, setErrors] = useState<{ name?: string; email?: string }>({})
 
     // Load roles
     useEffect(() => {
@@ -57,15 +67,45 @@ export default function UserCreatePage() {
         loadRoles()
     }, [])
 
+    // Load user data
+    useEffect(() => {
+        const loadUser = async () => {
+            const token = localStorage.getItem("token")
+            if (!token || !id) return
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    setFormState({
+                        id: data.id,
+                        fullName: data.fullName,
+                        email: data.email,
+                        roleId: data.role?.id || "",
+                        department: data.department || "",
+                        status: data.status,
+                    })
+                }
+            } catch (error) {
+                console.error("Failed to load user:", error)
+                showToast({ type: "error", message: "Failed to load user" })
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        loadUser()
+    }, [id, showToast])
+
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!canCreate || isSaving) {
+        if (!canEdit || isSaving) {
             return
         }
 
         const trimmedName = formState.fullName.trim()
         const trimmedEmail = formState.email.trim()
-        const trimmedPassword = formState.password
 
         if (!trimmedName) {
             setErrors({ name: "Full name is required" })
@@ -74,16 +114,6 @@ export default function UserCreatePage() {
 
         if (!trimmedEmail) {
             setErrors({ email: "Email is required" })
-            return
-        }
-
-        if (!trimmedPassword) {
-            setErrors({ password: "Password is required" })
-            return
-        }
-
-        if (trimmedPassword !== formState.confirmPassword) {
-            setErrors({ password: "Passwords do not match" })
             return
         }
 
@@ -101,8 +131,8 @@ export default function UserCreatePage() {
         setErrors({})
         setIsSaving(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/users`, {
-                method: "POST",
+            const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -110,40 +140,50 @@ export default function UserCreatePage() {
                 body: JSON.stringify({
                     fullName: trimmedName,
                     email: trimmedEmail,
-                    password: trimmedPassword,
                     roleId: formState.roleId,
-                    department: formState.department.trim() || null,
+                    department: formState.department?.trim() || null,
                     status: formState.status,
                 }),
             })
 
             if (!response.ok) {
                 const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to create user")
+                throw new Error(payload?.message ?? "Failed to update user")
             }
 
-            showToast({ type: "success", message: "User created" })
+            showToast({ type: "success", message: "User updated" })
             navigate("/users")
         } catch (error) {
             console.error(error)
             showToast({
                 type: "error",
-                message: error instanceof Error ? error.message : "Failed to create user",
+                message: error instanceof Error ? error.message : "Failed to update user",
             })
         } finally {
             setIsSaving(false)
         }
     }
 
-    if (!isPermissionLoading && !canCreate) {
+    if (!isPermissionLoading && !canEdit) {
         return (
             <div className="flex flex-col items-start gap-4 pb-10">
                 <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-lg">
                     <ChevronLeft className="size-5" />
                 </Button>
                 <div className="rounded-3xl border border-amber-200 bg-amber-50 px-6 py-4 text-amber-800">
-                    You do not have permission to create users.
+                    You do not have permission to edit users.
                 </div>
+            </div>
+        )
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-start gap-4 pb-10">
+                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-lg">
+                    <ChevronLeft className="size-5" />
+                </Button>
+                <p className="text-sm text-slate-500">Loading user...</p>
             </div>
         )
     }
@@ -155,19 +195,19 @@ export default function UserCreatePage() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-lg">
                         <ChevronLeft className="size-5" />
                     </Button>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create User</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Edit User</h1>
                 </div>
                 <Button
                     type="submit"
-                    form="user-create-form"
-                    className="rounded-lg px-6 py-5 font-bold shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
+                    form="user-edit-form"
+                    className="rounded-lg font-bold px-6 py-5 shadow-md shadow-primary/10 hover:shadow-primary/30 transition-all"
                     disabled={isSaving}
                 >
                     {isSaving ? "Saving..." : "Save"}
                 </Button>
             </div>
 
-            <form id="user-create-form" onSubmit={handleSubmit} className="mt-4 space-y-6">
+            <form id="user-edit-form" onSubmit={handleSubmit} className="mt-4 space-y-6">
                 <Card className="border border-slate-200 rounded-3xl">
                     <CardHeader>
                         <CardTitle className="text-base font-semibold text-slate-800">User Information</CardTitle>
@@ -222,7 +262,7 @@ export default function UserCreatePage() {
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                                 <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Department</label>
                                 <Input
-                                    value={formState.department}
+                                    value={formState.department || ""}
                                     onChange={event => setFormState(current => ({ ...current, department: event.target.value }))}
                                     className="py-5"
                                     placeholder="e.g. Sales, IT"
@@ -240,43 +280,6 @@ export default function UserCreatePage() {
                                     <option value="Active">Active</option>
                                     <option value="Inactive">Inactive</option>
                                 </select>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border border-slate-200 rounded-3xl">
-                    <CardHeader>
-                        <CardTitle className="text-base font-semibold text-slate-800">Security</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Password</label>
-                                <div className="flex-1 space-y-1">
-                                    <Input
-                                        type="password"
-                                        value={formState.password}
-                                        onChange={event => setFormState(current => ({ ...current, password: event.target.value }))}
-                                        className="py-5"
-                                        placeholder="••••••••"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Confirm</label>
-                                <div className="flex-1 space-y-1">
-                                    <Input
-                                        type="password"
-                                        value={formState.confirmPassword}
-                                        onChange={event => setFormState(current => ({ ...current, confirmPassword: event.target.value }))}
-                                        className="py-5"
-                                        placeholder="••••••••"
-                                        required
-                                    />
-                                    {errors.password ? <p className="text-xs text-red-500">{errors.password}</p> : null}
-                                </div>
                             </div>
                         </div>
                     </CardContent>

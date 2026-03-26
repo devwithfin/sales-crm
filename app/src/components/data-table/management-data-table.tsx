@@ -53,9 +53,12 @@ export function ManagementDataTable<TData, TValue>({
     })
 
     React.useEffect(() => {
-        if (searchColumn) {
-            table.getColumn(searchColumn)?.setFilterValue(searchValue)
+        if (!searchColumn) {
+            return
         }
+
+        const targetColumn = table.getAllColumns().find(column => column.id === searchColumn)
+        targetColumn?.setFilterValue(searchValue)
     }, [searchValue, searchColumn, table])
 
     return (

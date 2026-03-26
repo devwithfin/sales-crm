@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -24,6 +25,11 @@ export class MenusController {
     return this.menusService.getMenusForRole(req.user.roleId);
   }
 
+  @Get('all')
+  getAllMenus(): Promise<MenuNode[]> {
+    return this.menusService.getAllMenus();
+  }
+
   @Post()
   createMenu(@Body() dto: CreateMenuDto) {
     return this.menusService.createMenu(dto);
@@ -32,5 +38,15 @@ export class MenusController {
   @Delete(':id')
   removeMenu(@Param('id') id: string) {
     return this.menusService.deleteMenu(id);
+  }
+
+  @Patch(':id')
+  updateMenu(@Param('id') id: string, @Body() dto: CreateMenuDto) {
+    return this.menusService.updateMenu(id, dto);
+  }
+
+  @Get(':id')
+  getMenu(@Param('id') id: string) {
+    return this.menusService.getMenuById(id);
   }
 }
