@@ -11,6 +11,7 @@ const MenuCreatePage = lazy(() => import("@/pages/module/config/menus/create"))
 const MenuEditPage = lazy(() => import("@/pages/module/config/menus/edit"))
 const UserCreatePage = lazy(() => import("@/pages/module/config/users/create"))
 const UserEditPage = lazy(() => import("@/pages/module/config/users/edit"))
+const MyAccountPage = lazy(() => import("@/pages/module/profile/MyAccount"))
 
 export default function AppRoutes() {
     return (
@@ -78,6 +79,14 @@ export default function AppRoutes() {
                     element={
                         <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading page...</div>}>
                             <UserEditPage />
+                        </Suspense>
+                    }
+                />
+                <Route
+                    path="/profile/my-account"
+                    element={
+                        <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading page...</div>}>
+                            <MyAccountPage />
                         </Suspense>
                     }
                 />

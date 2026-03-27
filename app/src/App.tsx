@@ -1,7 +1,9 @@
 import AppRoutes from "@/routes/AppRoutes"
+import { useSessionTimeout } from "@/hooks/useSessionTimeout"
 
 function App() {
-  return <AppRoutes />
+    useSessionTimeout()
+    return <AppRoutes />
 }
 
 export default App

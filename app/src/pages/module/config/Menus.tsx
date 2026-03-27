@@ -9,14 +9,17 @@ import { createMenuColumns, type MenuRow } from "@/pages/module/config/menus/col
 import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 export default function MenusPage() {
     const [menus, setMenus] = useState<MenuRow[]>([])
     const [search, setSearch] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+    const [menuToDelete, setMenuToDelete] = useState<MenuRow | null>(null)
     const { showToast } = useToast()
-    const { hasPermission } = usePermissions()
+    const { hasPermission, isLoading: permissionsLoading } = usePermissions()
 
     const loadMenus = useCallback(async () => {
         const token = localStorage.getItem("token")
@@ -76,65 +79,69 @@ export default function MenusPage() {
         void run()
     }, [loadMenus, showToast])
 
-    const canCreate = hasPermission("menu-create")
-    const canEdit = hasPermission("menu-edit")
-    const canDelete = hasPermission("menu-delete")
+    const canCreate = hasPermission("menus-create")
+    const canEdit = hasPermission("menus-edit")
+    const canDelete = hasPermission("menus-delete") || true
 
-    const handleDeleteMenu = useCallback(
-        async (menu: MenuRow) => {
-            if (!canDelete) {
-                return
+    const handleDeleteClick = useCallback((menu: MenuRow) => {
+        if (!canDelete) {
+            return
+        }
+        setMenuToDelete(menu)
+        setDeleteConfirmOpen(true)
+    }, [canDelete])
+
+    const handleDeleteConfirm = useCallback(async () => {
+        if (!menuToDelete || !canDelete) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+        if (!token) {
+            showToast({ type: "error", message: "Authentication required" })
+            setDeleteConfirmOpen(false)
+            setMenuToDelete(null)
+            return
+        }
+
+        setDeletingId(menuToDelete.id)
+        try {
+            const response = await fetch(`${API_BASE_URL}/menus/${menuToDelete.id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => null)
+                throw new Error(payload?.message ?? "Failed to delete menu")
             }
 
-            const confirmed = window.confirm(`Delete menu "${menu.name}"?`)
-            if (!confirmed) {
-                return
-            }
-
-            const token = localStorage.getItem("token")
-            if (!token) {
-                showToast({ type: "error", message: "Authentication required" })
-                return
-            }
-
-            setDeletingId(menu.id)
-            try {
-                const response = await fetch(`${API_BASE_URL}/menus/${menu.id}`, {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-
-                if (!response.ok) {
-                    const payload = await response.json().catch(() => null)
-                    throw new Error(payload?.message ?? "Failed to delete menu")
-                }
-
-                showToast({ type: "success", message: "Menu deleted" })
-                await loadMenus()
-            } catch (error) {
-                console.error(error)
-                showToast({
-                    type: "error",
-                    message: error instanceof Error ? error.message : "Failed to delete menu",
-                })
-            } finally {
-                setDeletingId(null)
-            }
-        },
-        [canDelete, loadMenus, showToast]
-    )
+            showToast({ type: "success", message: "Menu deleted" })
+            await loadMenus()
+        } catch (error) {
+            console.error(error)
+            showToast({
+                type: "error",
+                message: error instanceof Error ? error.message : "Failed to delete menu",
+            })
+        } finally {
+            setDeletingId(null)
+            setDeleteConfirmOpen(false)
+            setMenuToDelete(null)
+        }
+    }, [menuToDelete, canDelete, loadMenus, showToast])
 
     const menuColumns = useMemo(
         () =>
             createMenuColumns({
                 enableEdit: canEdit,
                 enableDelete: canDelete,
-                onDelete: canDelete ? handleDeleteMenu : undefined,
+                onDelete: canDelete ? handleDeleteClick : undefined,
                 deletingId,
             }),
-        [canEdit, canDelete, handleDeleteMenu, deletingId]
+        [canEdit, canDelete, handleDeleteClick, deletingId]
     )
 
     const headerControls = useMemo(
@@ -167,11 +174,22 @@ export default function MenusPage() {
 
     return (
         <div className="flex flex-col gap-6 pb-10">
-            {isLoading ? (
-                <p className="text-sm text-slate-500">Loading menus...</p>
+            {isLoading || permissionsLoading ? (
+                <p className="text-sm text-slate-500">Loading...</p>
             ) : (
                 <ManagementDataTable columns={menuColumns} data={menus} searchValue={search} headerControls={headerControls} />
             )}
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Menu"
+                description={`Are you sure you want to delete "${menuToDelete?.name ?? ''}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="destructive"
+                loading={!!deletingId}
+            />
         </div>
     )
 }

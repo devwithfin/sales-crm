@@ -10,7 +10,7 @@ interface DataTableViewOptionsProps<TData> {
 export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
                 <Button variant="outline" size="sm" className="gap-2 rounded-xl border-slate-300 text-slate-700">
                     <SlidersHorizontal className="size-4" />
                     View

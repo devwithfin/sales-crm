@@ -155,7 +155,7 @@ export default function RoleEditPage() {
         isLoading: isPermissionContextLoading,
     } = usePermissions()
 
-    const canEditRole = hasPermission("role-edit")
+    const canEditRole = hasPermission("roles-edit")
 
     useEffect(() => {
         if (!id) {

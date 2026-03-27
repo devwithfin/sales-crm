@@ -84,12 +84,20 @@ async function upsertMenuWithPermission(
   where: Prisma.MenuWhereUniqueInput,
   data: MenuSeedInput,
 ) {
-  const permissionName =
-    data.permissionName !== undefined
-      ? data.permissionName
-      : data.menuLink !== null
-        ? normalizePermissionName(data.menuLink)
-        : null;
+  // Determine permission name:
+  // 1. If explicitly provided, use it
+  // 2. If menuLink exists, derive from link
+  // 3. If modelName exists (even without link), use modelName-view (for menu lv 1)
+  // 4. Otherwise null
+  let permissionName: string | null = null;
+
+  if (data.permissionName !== undefined) {
+    permissionName = data.permissionName;
+  } else if (data.menuLink !== null) {
+    permissionName = normalizePermissionName(data.menuLink);
+  } else if (data.modelName) {
+    permissionName = `${data.modelName}-view`;
+  }
 
   if (permissionName) {
     await ensurePermission(permissionName);
@@ -289,6 +297,7 @@ async function main() {
           order: 4,
           icon: 'user-plus',
           link: '/users',
+          permission: 'users-view',
         },
       ],
     },
@@ -308,10 +317,11 @@ async function main() {
       menuIcon: definition.icon ?? null,
       menuLink: definition.link ?? null,
       parentId,
-      // Only create permission for menus with links (actual pages)
+      // For menus with links: use explicit permission or derive from slug
+      // For menus without links (lv 1): permissionName will be derived from modelName in upsertMenuWithPermission
       permissionName: definition.link
         ? definition.permission ?? `${definition.slug}-view`
-        : null,
+        : undefined,
       modelName: definition.slug,
     };
 
@@ -336,15 +346,18 @@ async function main() {
   }
 
   const basePermissions = [
-    'menu-create',
-    'menu-edit',
-    'menu-delete',
-    'permission-create',
-    'permission-edit',
-    'permission-delete',
-    'role-edit',
-    'role-create',
-    'role-delete',
+    'menus-create',
+    'menus-edit',
+    'menus-delete',
+    'permissions-create',
+    'permissions-edit',
+    'permissions-delete',
+    'roles-create',
+    'roles-edit',
+    'roles-delete',
+    'users-create',
+    'users-edit',
+    'users-delete',
   ];
 
   for (const name of basePermissions) {
@@ -365,6 +378,7 @@ async function main() {
       // Skip if permission already exists (from menu definition)
       if (!existingSet.has(permName)) {
         await ensurePermission(permName);
+        existingSet.add(permName); // Add to set to avoid duplicates in this run
       }
     }
   }
@@ -375,13 +389,19 @@ async function main() {
     select: { id: true, name: true },
   });
   for (const perm of allPermissions) {
-    if (wrongPermissionPatterns.some((pattern) => perm.name.startsWith(pattern))) {
-      // Check if there's a correct version (plural) that exists
-      const correctPlural = perm.name.replace(/^menu-/, 'menus-').replace(/^permission-/, 'permissions-').replace(/^role-/, 'roles-');
-      if (existingSet.has(correctPlural)) {
-        // Delete the wrong permission
-        await prisma.permission.delete({ where: { id: perm.id } });
-        console.log(`Deleted wrong permission: ${perm.name}`);
+    for (const pattern of wrongPermissionPatterns) {
+      if (perm.name.startsWith(pattern)) {
+        // Check if there's a correct version (plural) that exists
+        const correctPlural = perm.name
+          .replace(/^menu-/, 'menus-')
+          .replace(/^permission-/, 'permissions-')
+          .replace(/^role-/, 'roles-');
+        const correctExists = allPermissions.some((p) => p.name === correctPlural);
+        if (correctExists) {
+          // Delete the wrong permission
+          await prisma.permission.delete({ where: { id: perm.id } });
+          console.log(`Deleted wrong permission: ${perm.name}`);
+        }
       }
     }
   }

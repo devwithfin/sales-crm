@@ -4,14 +4,12 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Outlet } from "react-router-dom"
 import { MenuProvider } from "@/context/menu"
-import { PermissionsProvider } from "@/context/permissions"
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
     return (
         <TooltipProvider delay={0}>
             <SidebarProvider className="overflow-hidden h-svh">
-                <PermissionsProvider>
-                    <MenuProvider>
+                <MenuProvider>
                         <AppSidebar />
                         <SidebarInset className="overscroll-none flex-1 overflow-hidden">
                             <AppNavbar />
@@ -22,7 +20,6 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                             </main>
                         </SidebarInset>
                     </MenuProvider>
-                </PermissionsProvider>
             </SidebarProvider>
         </TooltipProvider>
     )

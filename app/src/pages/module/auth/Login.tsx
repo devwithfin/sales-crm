@@ -46,6 +46,7 @@ export default function LoginPage() {
             const data = await response.json()
             localStorage.setItem("token", data.accessToken)
             localStorage.setItem("user", JSON.stringify(data.user))
+            localStorage.setItem("loginTime", Date.now().toString())
             showToast({ type: "success", message: "Signed in successfully" })
             navigate(redirectPath, { replace: true })
         } catch (err) {

@@ -11,8 +11,8 @@ import {
     PERMISSION_ACTION_LABELS,
     type PermissionGroupRow,
     type PermissionRow,
+    type PermissionAction,
     createPermissionGroupColumns,
-    formatResourceLabel,
 } from "@/pages/module/config/permissions/columns"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -23,7 +23,6 @@ export default function PermissionsPage() {
     const [search, setSearch] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const { showToast } = useToast()
-    const [modalResource, setModalResource] = useState("")
     const [modalActions, setModalActions] = useState<Record<PermissionAction, boolean>>({
         view: false,
         create: false,
@@ -33,7 +32,7 @@ export default function PermissionsPage() {
     const [editingGroup, setEditingGroup] = useState<PermissionGroupRow | null>(null)
     const [isModalSaving, setIsModalSaving] = useState(false)
     const { hasPermission } = usePermissions()
-    const canEdit = hasPermission("permission-edit")
+    const canEdit = hasPermission("permissions-edit")
 
     const fetchPermissions = useCallback(async () => {
         const token = localStorage.getItem("token")
@@ -131,7 +130,6 @@ export default function PermissionsPage() {
             return
         }
         setEditingGroup(group)
-        setModalResource(group.resource)
         setModalActions({
             view: Boolean(group.permissions.view),
             create: Boolean(group.permissions.create),
@@ -244,6 +242,7 @@ export default function PermissionsPage() {
                     columns={tableColumns}
                     data={groupedPermissions}
                     searchValue={search}
+                    searchColumn="resource"
                     headerControls={headerControls}
                     emptyMessage="No resources available."
                 />
@@ -253,7 +252,7 @@ export default function PermissionsPage() {
                 <SheetContent side="right">
                     <div className="flex flex-col h-full">
                         <SheetHeader>
-                            <SheetTitle>{editingGroup ? `Edit ${formatResourceLabel(modalResource)} Privileges` : "Privileges"}</SheetTitle>
+                            <SheetTitle>{editingGroup ? "Menu Privileges" : "Privileges"}</SheetTitle>
                         </SheetHeader>
                         <div className="px-4 py-4 flex-1 space-y-4 overflow-y-auto">
                            

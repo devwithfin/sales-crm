@@ -36,7 +36,7 @@ export default function MenuEditPage() {
     const { showToast } = useToast()
     const { hasPermission, isLoading: isPermissionLoading } = usePermissions()
     const { menus: contextMenus } = useMenuData()
-    const canEdit = hasPermission("menu-edit")
+    const canEdit = hasPermission("menus-edit")
 
     const [menu, setMenu] = useState<MenuInfo | null>(null)
     const [formState, setFormState] = useState({
@@ -324,7 +324,7 @@ export default function MenuEditPage() {
                         </div>
                         <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
-                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0 pt-1.5">Parent Menu</label>
+                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0 pt-1.5">Menu Parent</label>
                                 <select
                                     value={formState.parentId}
                                     onChange={event => setFormState(current => ({ ...current, parentId: event.target.value }))}
@@ -362,17 +362,12 @@ export default function MenuEditPage() {
                                 />
                             </div>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Model Key</label>
+                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Menu Model</label>
                                 <div className="flex-1 space-y-1">
                                     <Input
                                         value={formState.modelName}
-                                        onChange={event =>
-                                            setFormState(current => ({
-                                                ...current,
-                                                modelName: normalizeModelName(event.target.value),
-                                            }))
-                                        }
-                                        className="py-5"
+                                        readOnly
+                                        className="py-5 bg-slate-50"
                                         placeholder="e.g. deals"
                                     />
                                 </div>
@@ -380,7 +375,7 @@ export default function MenuEditPage() {
                         </div>
                         <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Permission</label>
+                                <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Menu Permission</label>
                                 <Input
                                     value={formState.permissionName}
                                     readOnly

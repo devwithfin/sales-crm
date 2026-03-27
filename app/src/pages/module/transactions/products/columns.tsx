@@ -11,7 +11,6 @@ import {
 
 export type Product = {
     name: string
-    sku: string
     category: string
     price: string
     status: "Available" | "Out of Stock"
@@ -64,10 +63,6 @@ export const columns: ColumnDef<Product>[] = [
         accessorKey: "name",
         header: "Product Name",
         cell: ({ row }) => <span className="font-semibold text-slate-900">{row.original.name}</span>,
-    },
-    {
-        accessorKey: "sku",
-        header: "SKU",
     },
     {
         accessorKey: "category",

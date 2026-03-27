@@ -13,7 +13,7 @@ export default function RoleCreatePage() {
     const navigate = useNavigate()
     const { showToast } = useToast()
     const { hasPermission, isLoading: isPermissionLoading } = usePermissions()
-    const canCreate = hasPermission("role-create")
+    const canCreate = hasPermission("roles-create")
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const [isSaving, setIsSaving] = useState(false)

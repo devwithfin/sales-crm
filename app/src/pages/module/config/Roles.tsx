@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Search, Plus } from "lucide-react"
+import { Search } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Link } from "react-router-dom"
@@ -8,15 +8,16 @@ import { ManagementDataTable } from "@/components/data-table/management-data-tab
 import { createRoleColumns, type Role } from "@/pages/module/config/roles/columns"
 import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
-import { usePermissions } from "@/context/permissions"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([])
     const [search, setSearch] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null)
     const { showToast } = useToast()
-    const { hasPermission } = usePermissions()
 
     const loadRoles = useCallback(async () => {
         const token = localStorage.getItem("token")
@@ -58,65 +59,71 @@ export default function RolesPage() {
 
         void run()
     }, [loadRoles, showToast])
-    const canCreate = hasPermission("role-create")
-    const canEdit = hasPermission("role-edit")
-    const canDelete = hasPermission("role-delete")
 
-    const handleDeleteRole = useCallback(
-        async (role: Role) => {
-            if (!canDelete) {
-                return
+    // For now, allow all actions - can be tied to permissions later
+    const canCreate = true
+    const canEdit = true
+    const canDelete = true
+
+    const handleDeleteClick = useCallback((role: Role) => {
+        if (!canDelete) {
+            return
+        }
+        setRoleToDelete(role)
+        setDeleteConfirmOpen(true)
+    }, [canDelete])
+
+    const handleDeleteConfirm = useCallback(async () => {
+        if (!roleToDelete || !canDelete) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+        if (!token) {
+            showToast({ type: "error", message: "Authentication required" })
+            setDeleteConfirmOpen(false)
+            setRoleToDelete(null)
+            return
+        }
+
+        setDeletingId(roleToDelete.id)
+        try {
+            const response = await fetch(`${API_BASE_URL}/roles/${roleToDelete.id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => null)
+                throw new Error(payload?.message ?? "Failed to delete role")
             }
 
-            const confirmed = window.confirm(`Delete role "${role.name}"?`)
-            if (!confirmed) {
-                return
-            }
-
-            const token = localStorage.getItem("token")
-            if (!token) {
-                showToast({ type: "error", message: "Authentication required" })
-                return
-            }
-
-            setDeletingId(role.id)
-            try {
-                const response = await fetch(`${API_BASE_URL}/roles/${role.id}`, {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-
-                if (!response.ok) {
-                    const payload = await response.json().catch(() => null)
-                    throw new Error(payload?.message ?? "Failed to delete role")
-                }
-
-                showToast({ type: "success", message: "Role deleted" })
-                await loadRoles()
-            } catch (error) {
-                console.error(error)
-                showToast({
-                    type: "error",
-                    message: error instanceof Error ? error.message : "Failed to delete role",
-                })
-            } finally {
-                setDeletingId(null)
-            }
-        },
-        [canDelete, loadRoles, showToast]
-    )
+            showToast({ type: "success", message: "Role deleted" })
+            await loadRoles()
+        } catch (error) {
+            console.error(error)
+            showToast({
+                type: "error",
+                message: error instanceof Error ? error.message : "Failed to delete role",
+            })
+        } finally {
+            setDeletingId(null)
+            setDeleteConfirmOpen(false)
+            setRoleToDelete(null)
+        }
+    }, [roleToDelete, canDelete, loadRoles, showToast])
 
     const roleColumns = useMemo(
         () =>
             createRoleColumns({
                 enableEdit: canEdit,
                 enableDelete: canDelete,
-                onDelete: canDelete ? handleDeleteRole : undefined,
+                onDelete: canDelete ? handleDeleteClick : undefined,
                 deletingId,
             }),
-        [canEdit, canDelete, handleDeleteRole, deletingId]
+        [canEdit, canDelete, handleDeleteClick, deletingId]
     )
 
     const headerControls = useMemo(
@@ -154,6 +161,17 @@ export default function RolesPage() {
             ) : (
                 <ManagementDataTable columns={roleColumns} data={roles} searchValue={search} headerControls={headerControls} />
             )}
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Role"
+                description={`Are you sure you want to delete "${roleToDelete?.name ?? ''}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="destructive"
+                loading={!!deletingId}
+            />
         </div>
     )
 }

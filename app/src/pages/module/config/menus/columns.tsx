@@ -2,7 +2,12 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Link } from "react-router-dom"
 import { MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
 export type MenuRow = {
@@ -33,7 +38,7 @@ export function createMenuColumns({ enableEdit, enableDelete, onDelete, deleting
             id: "select",
             header: ({ table }) => (
                 <Checkbox
-                    checked={(table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")) as any}
+                    checked={(table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")) as boolean}
                     onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
                 />
@@ -97,10 +102,10 @@ export function createMenuColumns({ enableEdit, enableDelete, onDelete, deleting
                 <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md border-none flex items-center justify-center outline-none cursor-pointer">
                     <MoreHorizontal className="h-4 w-4 text-slate-500" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-36 rounded-xl p-1 shadow-md bg-white border border-slate-200">
+                <DropdownMenuContent align="start" className="w-24 rounded-xl p-1 shadow-md bg-white border border-slate-200">
                     {enableEdit ? (
                         <DropdownMenuItem className="flex items-center px-3 py-2 cursor-pointer rounded-lg hover:bg-slate-50 transition-colors outline-none text-slate-700">
-                            <Link to={`/menus/${row.original.id}/edit`} className="w-full text-sm font-medium">
+                            <Link to={`/menus/${row.original.id}/edit`} className="text-sm font-medium w-full">
                                 Edit
                             </Link>
                         </DropdownMenuItem>
@@ -111,8 +116,7 @@ export function createMenuColumns({ enableEdit, enableDelete, onDelete, deleting
                                 "flex items-center px-3 py-2 cursor-pointer rounded-lg text-red-600 hover:bg-red-50 transition-colors outline-none font-semibold text-sm",
                                 deletingId === row.original.id && "opacity-50 pointer-events-none"
                             )}
-                            onSelect={event => {
-                                event.preventDefault()
+                            onClick={() => {
                                 if (deletingId === row.original.id) {
                                     return
                                 }
