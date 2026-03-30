@@ -4,10 +4,10 @@ import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
 import { useMenuData, type MenuNode } from "@/context/menu"
+import { apiFetch } from "@/lib/api"
 
 function normalizeModelName(value: string) {
     return value
@@ -121,12 +121,6 @@ export default function MenuCreatePage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            return
-        }
-
         const rawLink = formState.menuLink.trim()
         const sanitizedLink = rawLink ? (rawLink.startsWith("/") ? rawLink : `/${rawLink}`) : ""
         const normalizedModel = normalizeModelName(formState.modelName)
@@ -139,12 +133,8 @@ export default function MenuCreatePage() {
         setErrors({})
         setIsSaving(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/menus`, {
+            await apiFetch("/menus", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     menuName: trimmedName,
                     menuOrder: Number(formState.menuOrder),
@@ -156,11 +146,6 @@ export default function MenuCreatePage() {
                     permissionName: formState.permissionName.trim() || null,
                 }),
             })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to create menu")
-            }
 
             showToast({ type: "success", message: "Menu created" })
             navigate("/menus")
@@ -303,7 +288,13 @@ export default function MenuCreatePage() {
                                         onChange={event =>
                                             setFormState(current => ({
                                                 ...current,
-                                                modelName: normalizeModelName(event.target.value),
+                                                modelName: event.target.value.toLowerCase(),
+                                            }))
+                                        }
+                                        onBlur={event => 
+                                            setFormState(current => ({
+                                                ...current,
+                                                modelName: normalizeModelName(event.target.value)
                                             }))
                                         }
                                         className="py-5"

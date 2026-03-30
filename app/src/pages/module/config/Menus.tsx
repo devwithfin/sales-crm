@@ -6,10 +6,10 @@ import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { ManagementDataTable } from "@/components/data-table/management-data-table"
 import { createMenuColumns, type MenuRow } from "@/pages/module/config/menus/columns"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { apiFetch } from "@/lib/api"
 
 export default function MenusPage() {
     const [menus, setMenus] = useState<MenuRow[]>([])
@@ -22,42 +22,35 @@ export default function MenusPage() {
     const { hasPermission, isLoading: permissionsLoading } = usePermissions()
 
     const loadMenus = useCallback(async () => {
-        const token = localStorage.getItem("token")
-        if (!token) {
-            setMenus([])
-            return
-        }
+        try {
+            const menusData = await apiFetch<MenuRow[]>("/menus/all")
+            
+            if (!Array.isArray(menusData)) {
+                setMenus([])
+                return
+            }
 
-        const response = await fetch(`${API_BASE_URL}/menus/all`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const payload = await response.json().catch(() => null)
-            throw new Error(payload?.message ?? "Failed to load menus")
-        }
-
-        const menusData = await response.json() as MenuRow[]
-        
-        // Flatten the menu tree for table display
-        const flattenMenus = (nodes: MenuRow[], parentName: string | null = null): MenuRow[] => {
-            const items: MenuRow[] = []
-            nodes.forEach(node => {
-                items.push({ 
-                    ...node, 
-                    parentName,
-                    isGroup: !node.link && !!node.children?.length
+            // Flatten the menu tree for table display
+            const flattenMenus = (nodes: MenuRow[], parentName: string | null = null): MenuRow[] => {
+                const items: MenuRow[] = []
+                nodes.forEach(node => {
+                    items.push({ 
+                        ...node, 
+                        parentName,
+                        isGroup: !node.link && !!node.children?.length
+                    })
+                    if (node.children?.length) {
+                        items.push(...flattenMenus(node.children, node.name))
+                    }
                 })
-                if (node.children?.length) {
-                    items.push(...flattenMenus(node.children, node.name))
-                }
-            })
-            return items
+                return items
+            }
+            
+            setMenus(flattenMenus(menusData))
+        } catch (error) {
+            console.error("Failed to fetch menus", error)
+            setMenus([])
         }
-        
-        setMenus(flattenMenus(menusData))
     }, [])
 
     useEffect(() => {
@@ -81,7 +74,7 @@ export default function MenusPage() {
 
     const canCreate = hasPermission("menus-create")
     const canEdit = hasPermission("menus-edit")
-    const canDelete = hasPermission("menus-delete") || true
+    const canDelete = hasPermission("menus-delete")
 
     const handleDeleteClick = useCallback((menu: MenuRow) => {
         if (!canDelete) {
@@ -96,28 +89,9 @@ export default function MenusPage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            setDeleteConfirmOpen(false)
-            setMenuToDelete(null)
-            return
-        }
-
         setDeletingId(menuToDelete.id)
         try {
-            const response = await fetch(`${API_BASE_URL}/menus/${menuToDelete.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to delete menu")
-            }
-
+            await apiFetch(`/menus/${menuToDelete.id}`, { method: "DELETE" })
             showToast({ type: "success", message: "Menu deleted" })
             await loadMenus()
         } catch (error) {

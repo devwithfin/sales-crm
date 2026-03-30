@@ -18,9 +18,16 @@ interface DataTableProps<TData, TValue> {
     data: TData[]
     searchValue?: string
     headerControls?: React.ReactNode
+    meta?: any
 }
 
-export function ProductsDataTable<TData, TValue>({ columns, data, searchValue = "", headerControls }: DataTableProps<TData, TValue>) {
+export function ProductsDataTable<TData, TValue>({
+    columns,
+    data,
+    searchValue = "",
+    headerControls,
+    meta,
+}: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [rowSelection, setRowSelection] = React.useState({})
@@ -36,6 +43,7 @@ export function ProductsDataTable<TData, TValue>({ columns, data, searchValue = 
         onColumnFiltersChange: setColumnFilters,
         onRowSelectionChange: setRowSelection,
         enableRowSelection: true,
+        meta,
         initialState: {
             pagination: {
                 pageSize: 5,

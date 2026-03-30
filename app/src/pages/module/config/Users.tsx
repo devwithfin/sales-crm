@@ -6,10 +6,10 @@ import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { ManagementDataTable } from "@/components/data-table/management-data-table"
 import { createUserColumns, type User } from "@/pages/module/config/users/columns"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { apiFetch } from "@/lib/api"
 
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([])
@@ -22,25 +22,13 @@ export default function UsersPage() {
     const { hasPermission, isLoading: permissionsLoading } = usePermissions()
 
     const loadUsers = useCallback(async () => {
-        const token = localStorage.getItem("token")
-        if (!token) {
+        try {
+            const usersData = await apiFetch<User[]>("/users")
+            setUsers(Array.isArray(usersData) ? usersData : [])
+        } catch (error) {
+            console.error("Failed to fetch users", error)
             setUsers([])
-            return
         }
-
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const payload = await response.json().catch(() => null)
-            throw new Error(payload?.message ?? "Failed to load users")
-        }
-
-        const usersData = (await response.json()) as User[]
-        setUsers(usersData)
     }, [])
 
     useEffect(() => {
@@ -79,28 +67,9 @@ export default function UsersPage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            setDeleteConfirmOpen(false)
-            setUserToDelete(null)
-            return
-        }
-
         setDeletingId(userToDelete.id)
         try {
-            const response = await fetch(`${API_BASE_URL}/users/${userToDelete.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to delete user")
-            }
-
+            await apiFetch(`/users/${userToDelete.id}`, { method: "DELETE" })
             showToast({ type: "success", message: "User deleted" })
             await loadUsers()
         } catch (error) {

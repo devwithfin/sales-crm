@@ -3,7 +3,6 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { ManagementDataTable } from "@/components/data-table/management-data-table"
 import {
@@ -17,6 +16,7 @@ import {
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePermissions } from "@/context/permissions"
+import { apiFetch } from "@/lib/api"
 
 export default function PermissionsPage() {
     const [permissions, setPermissions] = useState<PermissionRow[]>([])
@@ -30,29 +30,20 @@ export default function PermissionsPage() {
         delete: false,
     })
     const [editingGroup, setEditingGroup] = useState<PermissionGroupRow | null>(null)
+    const [isCreatingNew, setIsCreatingNew] = useState(false)
+    const [newResourceName, setNewResourceName] = useState("")
     const [isModalSaving, setIsModalSaving] = useState(false)
     const { hasPermission } = usePermissions()
     const canEdit = hasPermission("permissions-edit")
 
     const fetchPermissions = useCallback(async () => {
-        const token = localStorage.getItem("token")
-        if (!token) {
+        try {
+            const data = await apiFetch<PermissionRow[]>("/permissions")
+            setPermissions(Array.isArray(data) ? data : [])
+        } catch (error) {
+            console.error(error)
             setPermissions([])
-            return
         }
-
-        const response = await fetch(`${API_BASE_URL}/permissions`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            throw new Error("Failed to load permissions")
-        }
-
-        const data = (await response.json()) as PermissionRow[]
-        setPermissions(data)
     }, [])
 
     useEffect(() => {
@@ -130,6 +121,7 @@ export default function PermissionsPage() {
             return
         }
         setEditingGroup(group)
+        setIsCreatingNew(false)
         setModalActions({
             view: Boolean(group.permissions.view),
             create: Boolean(group.permissions.create),
@@ -138,9 +130,24 @@ export default function PermissionsPage() {
         })
     }, [canEdit])
 
+    const openCreateModal = () => {
+        if (!canEdit) return
+        setIsCreatingNew(true)
+        setEditingGroup(null)
+        setNewResourceName("")
+        setModalActions({
+            view: true,
+            create: true,
+            edit: true,
+            delete: true,
+        })
+    }
+
     const closeModal = () => {
         setEditingGroup(null)
+        setIsCreatingNew(false)
         setIsModalSaving(false)
+        setNewResourceName("")
         setModalActions({
             view: false,
             create: false,
@@ -168,9 +175,14 @@ export default function PermissionsPage() {
                         className="border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                 </div>
+                {canEdit && (
+                    <Button onClick={openCreateModal} className="rounded-lg font-bold px-6 py-5">
+                        New Resource
+                    </Button>
+                )}
             </div>
         ),
-        [search]
+        [search, canEdit]
     )
 
     const handleToggleAction = (action: PermissionAction) => {
@@ -181,9 +193,13 @@ export default function PermissionsPage() {
     }
 
     const handleSaveModal = async () => {
-        const token = localStorage.getItem("token")
-        if (!token || !editingGroup) {
-            showToast({ type: "error", message: "Authentication required" })
+        if (!editingGroup && !isCreatingNew) {
+            return
+        }
+
+        const resource = isCreatingNew ? newResourceName.trim().toLowerCase() : editingGroup?.resource
+        if (!resource) {
+            showToast({ type: "error", message: "Resource name is required" })
             return
         }
 
@@ -191,31 +207,17 @@ export default function PermissionsPage() {
         try {
             for (const action of PERMISSION_ACTIONS) {
                 const shouldHave = modalActions[action]
-                const existing = editingGroup.permissions[action]
+                const existing = isCreatingNew ? null : editingGroup?.permissions[action]
+                
                 if (shouldHave && !existing) {
-                    const response = await fetch(`${API_BASE_URL}/permissions`, {
+                    await apiFetch("/permissions", {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({ name: `${editingGroup.resource}-${action}` }),
+                        body: JSON.stringify({ name: `${resource}-${action}` }),
                     })
-                    if (!response.ok) {
-                        const payload = await response.json().catch(() => null)
-                        throw new Error(payload?.message ?? "Failed to create permission")
-                    }
                 } else if (!shouldHave && existing) {
-                    const response = await fetch(`${API_BASE_URL}/permissions/${existing.id}`, {
+                    await apiFetch(`/permissions/${existing.id}`, {
                         method: "DELETE",
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
                     })
-                    if (!response.ok) {
-                        const payload = await response.json().catch(() => null)
-                        throw new Error(payload?.message ?? "Failed to delete permission")
-                    }
                 }
             }
 
@@ -236,7 +238,7 @@ export default function PermissionsPage() {
     return (
         <div className="flex flex-col gap-6 pb-10">
             {isLoading ? (
-                <p className="text-sm text-slate-500">Loading permissions...</p>
+                <div className="p-8 text-center text-sm text-slate-500">Loading permissions...</div>
             ) : (
                 <ManagementDataTable
                     columns={tableColumns}
@@ -248,36 +250,57 @@ export default function PermissionsPage() {
                 />
             )}
 
-            <Sheet open={Boolean(editingGroup)} onOpenChange={open => (open ? null : closeModal())}>
+            <Sheet open={Boolean(editingGroup) || isCreatingNew} onOpenChange={open => (open ? null : closeModal())}>
                 <SheetContent side="right">
                     <div className="flex flex-col h-full">
                         <SheetHeader>
-                            <SheetTitle>{editingGroup ? "Menu Privileges" : "Privileges"}</SheetTitle>
+                            <SheetTitle>{isCreatingNew ? "Initialize Resource" : "Resource Privileges"}</SheetTitle>
                         </SheetHeader>
                         <div className="px-4 py-4 flex-1 space-y-4 overflow-y-auto">
                            
-                            <div className="space-y-2">
-                                <p className="text-sm font-semibold text-slate-700">Actions</p>
+                            {isCreatingNew && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700">Resource Name</label>
+                                    <Input
+                                        value={newResourceName}
+                                        onChange={e => setNewResourceName(e.target.value)}
+                                        placeholder="e.g. products, leads"
+                                        className="rounded-xl py-5"
+                                    />
+                                    <p className="text-[10px] text-slate-400">This will be used as the prefix for all actions (e.g. products-view, products-create).</p>
+                                </div>
+                            )}
+
+                            {!isCreatingNew && (
+                                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3">
+                                    <p className="text-xs text-slate-400 mb-0.5 uppercase font-bold tracking-wider">Managing resource</p>
+                                    <p className="text-lg font-bold text-slate-900">{editingGroup?.resource}</p>
+                                </div>
+                            )}
+
+                            <div className="space-y-4 pt-4">
+                                <p className="text-sm font-semibold text-slate-700 underline underline-offset-4 decoration-primary/30">Action Sets</p>
                                 <div className="space-y-2">
                                     {PERMISSION_ACTIONS.map(action => (
                                         <label
                                             key={action}
-                                            className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 bg-slate-50"
+                                            className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 bg-white hover:bg-slate-50 transition-colors"
                                         >
                                             <Checkbox
                                                 checked={modalActions[action]}
                                                 onCheckedChange={() => handleToggleAction(action)}
-                                                aria-label={`Toggle ${PERMISSION_ACTION_LABELS[action]}`}
+                                                className="size-5 rounded-md"
                                             />
                                             <div>
-                                                <p className="font-medium text-slate-900">{PERMISSION_ACTION_LABELS[action]}</p>
+                                                <p className="font-bold text-slate-900">{PERMISSION_ACTION_LABELS[action]}</p>
+                                                <p className="text-[10px] text-slate-400 lowercase italic">{isCreatingNew ? `${newResourceName || "resource"}-${action}` : `${editingGroup?.resource}-${action}`}</p>
                                             </div>
                                         </label>
                                     ))}
                                 </div>
                             </div>
 
-                            {editingGroup?.extras.length ? (
+                            {!isCreatingNew && editingGroup?.extras.length ? (
                                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
                                     This resource also contains {editingGroup.extras.length} custom permission
                                     {editingGroup.extras.length > 1 ? "s" : ""}. Manage them individually if needed.
@@ -289,8 +312,13 @@ export default function PermissionsPage() {
                                 <Button type="button" variant="outline" onClick={closeModal} disabled={isModalSaving}>
                                     Cancel
                                 </Button>
-                                <Button type="button" onClick={handleSaveModal} disabled={isModalSaving || !editingGroup}>
-                                    {isModalSaving ? "Saving..." : "Save"}
+                                <Button 
+                                    type="button" 
+                                    onClick={handleSaveModal} 
+                                    className="px-8"
+                                    disabled={isModalSaving || (isCreatingNew && !newResourceName.trim())}
+                                >
+                                    {isModalSaving ? "Saving..." : "Save Privileges"}
                                 </Button>
                             </div>
                         </SheetFooter>

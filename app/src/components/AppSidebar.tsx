@@ -32,10 +32,6 @@ function buildSidebarGroups(nodes: MenuNode[]): SidebarNavGroup[] {
                     iconKey: child.icon ?? node.icon ?? null,
                 }))
 
-            if (items.length === 0) {
-                return null
-            }
-
             return {
                 id: node.id,
                 title: node.name,

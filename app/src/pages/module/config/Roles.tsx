@@ -6,9 +6,10 @@ import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { ManagementDataTable } from "@/components/data-table/management-data-table"
 import { createRoleColumns, type Role } from "@/pages/module/config/roles/columns"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { apiFetch } from "@/lib/api"
+import { usePermissions } from "@/context/permissions"
 
 export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([])
@@ -18,27 +19,16 @@ export default function RolesPage() {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [roleToDelete, setRoleToDelete] = useState<Role | null>(null)
     const { showToast } = useToast()
+    const { hasPermission, isLoading: permissionsLoading } = usePermissions()
 
     const loadRoles = useCallback(async () => {
-        const token = localStorage.getItem("token")
-        if (!token) {
+        try {
+            const rolesData = await apiFetch<Role[]>("/roles")
+            setRoles(Array.isArray(rolesData) ? rolesData : [])
+        } catch (error) {
+            console.error("Failed to fetch roles", error)
             setRoles([])
-            return
         }
-
-        const response = await fetch(`${API_BASE_URL}/roles`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const payload = await response.json().catch(() => null)
-            throw new Error(payload?.message ?? "Failed to load roles")
-        }
-
-        const rolesData = (await response.json()) as Role[]
-        setRoles(rolesData)
     }, [])
 
     useEffect(() => {
@@ -60,10 +50,9 @@ export default function RolesPage() {
         void run()
     }, [loadRoles, showToast])
 
-    // For now, allow all actions - can be tied to permissions later
-    const canCreate = true
-    const canEdit = true
-    const canDelete = true
+    const canCreate = hasPermission("roles-create")
+    const canEdit = hasPermission("roles-edit")
+    const canDelete = hasPermission("roles-delete")
 
     const handleDeleteClick = useCallback((role: Role) => {
         if (!canDelete) {
@@ -78,28 +67,9 @@ export default function RolesPage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            setDeleteConfirmOpen(false)
-            setRoleToDelete(null)
-            return
-        }
-
         setDeletingId(roleToDelete.id)
         try {
-            const response = await fetch(`${API_BASE_URL}/roles/${roleToDelete.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to delete role")
-            }
-
+            await apiFetch(`/roles/${roleToDelete.id}`, { method: "DELETE" })
             showToast({ type: "success", message: "Role deleted" })
             await loadRoles()
         } catch (error) {
@@ -156,7 +126,7 @@ export default function RolesPage() {
 
     return (
         <div className="flex flex-col gap-6 pb-10">
-            {isLoading ? (
+            {isLoading || permissionsLoading ? (
                 <p className="text-sm text-slate-500">Loading roles...</p>
             ) : (
                 <ManagementDataTable columns={roleColumns} data={roles} searchValue={search} headerControls={headerControls} />

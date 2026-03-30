@@ -4,14 +4,23 @@ import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
+import { apiFetch } from "@/lib/api"
 
 type Role = {
     id: string
     name: string
     description: string | null
+}
+
+type UserWithRole = {
+    id: string
+    fullName: string
+    email: string
+    department: string | null
+    status: string
+    role?: { id: string }
 }
 
 type UserData = {
@@ -33,7 +42,7 @@ export default function UserEditPage() {
     const [roles, setRoles] = useState<Role[]>([])
     const [isLoadingRoles, setIsLoadingRoles] = useState(true)
     const [formState, setFormState] = useState<UserData>({
-        id: "",
+        id: id || "",
         fullName: "",
         email: "",
         roleId: "",
@@ -47,47 +56,34 @@ export default function UserEditPage() {
     // Load roles
     useEffect(() => {
         const loadRoles = async () => {
-            const token = localStorage.getItem("token")
-            if (!token) return
-
             try {
-                const response = await fetch(`${API_BASE_URL}/roles`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
-                if (response.ok) {
-                    const data = await response.json()
-                    setRoles(data)
-                }
+                const data = await apiFetch<Role[]>("/roles")
+                setRoles(Array.isArray(data) ? data : [])
             } catch (error) {
                 console.error("Failed to load roles:", error)
+                setRoles([])
             } finally {
                 setIsLoadingRoles(false)
             }
         }
-        loadRoles()
+        void loadRoles()
     }, [])
 
     // Load user data
     useEffect(() => {
         const loadUser = async () => {
-            const token = localStorage.getItem("token")
-            if (!token || !id) return
+            if (!id) return
 
             try {
-                const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                const data = await apiFetch<UserWithRole>(`/users/${id}`)
+                setFormState({
+                    id: data.id,
+                    fullName: data.fullName,
+                    email: data.email,
+                    roleId: data.role?.id || "",
+                    department: data.department || "",
+                    status: data.status,
                 })
-                if (response.ok) {
-                    const data = await response.json()
-                    setFormState({
-                        id: data.id,
-                        fullName: data.fullName,
-                        email: data.email,
-                        roleId: data.role?.id || "",
-                        department: data.department || "",
-                        status: data.status,
-                    })
-                }
             } catch (error) {
                 console.error("Failed to load user:", error)
                 showToast({ type: "error", message: "Failed to load user" })
@@ -95,7 +91,7 @@ export default function UserEditPage() {
                 setIsLoading(false)
             }
         }
-        loadUser()
+        void loadUser()
     }, [id, showToast])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -122,21 +118,11 @@ export default function UserEditPage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            return
-        }
-
         setErrors({})
         setIsSaving(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+            await apiFetch(`/users/${id}`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     fullName: trimmedName,
                     email: trimmedEmail,
@@ -145,11 +131,6 @@ export default function UserEditPage() {
                     status: formState.status,
                 }),
             })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to update user")
-            }
 
             showToast({ type: "success", message: "User updated" })
             navigate("/users")

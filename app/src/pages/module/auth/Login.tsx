@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, Mail, Eye, EyeOff } from "lucide-react"
 import { COMPANY_LOGO_PATH } from "@/constants/branding"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
+import { apiFetch } from "@/lib/api"
+import { useAuth, type UserProfile } from "@/context/auth"
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
@@ -16,37 +17,28 @@ export default function LoginPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const { showToast } = useToast()
+    const { login, isAuthenticated } = useAuth()
     const redirectPath = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/dashboard"
 
     useEffect(() => {
-        const token = localStorage.getItem("token")
-        if (token) {
+        if (isAuthenticated) {
             navigate(redirectPath, { replace: true })
         }
-    }, [navigate, redirectPath])
+    }, [navigate, redirectPath, isAuthenticated])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         setIsSubmitting(true)
 
         try {
-            const response = await fetch(`${API_BASE_URL}/login`, {
+            const data = await apiFetch<{ accessToken: string; user: UserProfile }>("/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
                 body: JSON.stringify({ email, password }),
             })
 
-            if (!response.ok) {
-                const message = (await response.json())?.message ?? "Failed to sign in"
-                throw new Error(message)
-            }
-
-            const data = await response.json()
-            localStorage.setItem("token", data.accessToken)
-            localStorage.setItem("user", JSON.stringify(data.user))
-            localStorage.setItem("loginTime", Date.now().toString())
+            // Unified login via context
+            login(data.accessToken, data.user)
+            
             showToast({ type: "success", message: "Signed in successfully" })
             navigate(redirectPath, { replace: true })
         } catch (err) {

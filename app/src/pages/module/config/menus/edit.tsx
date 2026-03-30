@@ -4,10 +4,10 @@ import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
 import { useMenuData, type MenuNode } from "@/context/menu"
+import { apiFetch } from "@/lib/api"
 
 type MenuInfo = {
     id: string
@@ -55,32 +55,23 @@ export default function MenuEditPage() {
     const loadMenu = useCallback(async () => {
         if (!id) return
 
-        const token = localStorage.getItem("token")
-        if (!token) return
-
-        const response = await fetch(`${API_BASE_URL}/menus/${id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const payload = await response.json().catch(() => null)
-            throw new Error(payload?.message ?? "Failed to load menu")
+        try {
+            const menuData = await apiFetch<MenuInfo>(`/menus/${id}`)
+            setMenu(menuData)
+            setFormState({
+                menuName: menuData.menuName,
+                menuLevel: menuData.menuLevel,
+                menuOrder: menuData.menuOrder,
+                menuIcon: menuData.menuIcon ?? "",
+                menuLink: menuData.menuLink ?? "",
+                parentId: menuData.parentId ?? "",
+                modelName: menuData.modelName ?? "",
+                permissionName: menuData.permissionName ?? "",
+            })
+        } catch (error) {
+            console.error("Failed to load menu", error)
+            throw error
         }
-
-        const menuData = (await response.json()) as MenuInfo
-        setMenu(menuData)
-        setFormState({
-            menuName: menuData.menuName,
-            menuLevel: menuData.menuLevel,
-            menuOrder: menuData.menuOrder,
-            menuIcon: menuData.menuIcon ?? "",
-            menuLink: menuData.menuLink ?? "",
-            parentId: menuData.parentId ?? "",
-            modelName: menuData.modelName ?? "",
-            permissionName: menuData.permissionName ?? "",
-        })
     }, [id])
 
     useEffect(() => {
@@ -190,12 +181,6 @@ export default function MenuEditPage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            return
-        }
-
         const rawLink = formState.menuLink.trim()
         const sanitizedLink = rawLink ? (rawLink.startsWith("/") ? rawLink : `/${rawLink}`) : ""
         const normalizedModel = normalizeModelName(formState.modelName)
@@ -207,12 +192,8 @@ export default function MenuEditPage() {
 
         setIsSaving(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/menus/${id}`, {
+            await apiFetch(`/menus/${id}`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     menuName: trimmedName,
                     menuOrder: Number(formState.menuOrder),
@@ -224,11 +205,6 @@ export default function MenuEditPage() {
                     permissionName: formState.permissionName.trim() || null,
                 }),
             })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to update menu")
-            }
 
             showToast({ type: "success", message: "Menu updated" })
             navigate("/menus")
@@ -366,8 +342,19 @@ export default function MenuEditPage() {
                                 <div className="flex-1 space-y-1">
                                     <Input
                                         value={formState.modelName}
-                                        readOnly
-                                        className="py-5 bg-slate-50"
+                                        onChange={event =>
+                                            setFormState(current => ({
+                                                ...current,
+                                                modelName: event.target.value.toLowerCase(),
+                                            }))
+                                        }
+                                        onBlur={event => 
+                                            setFormState(current => ({
+                                                ...current,
+                                                modelName: normalizeModelName(event.target.value)
+                                            }))
+                                        }
+                                        className="py-5"
                                         placeholder="e.g. deals"
                                     />
                                 </div>
@@ -378,8 +365,14 @@ export default function MenuEditPage() {
                                 <label className="text-sm font-medium text-slate-600 w-32 shrink-0">Menu Permission</label>
                                 <Input
                                     value={formState.permissionName}
-                                    readOnly
-                                    className="py-5 bg-slate-50"
+                                    onChange={event => setFormState(current => ({ ...current, permissionName: event.target.value }))}
+                                    onBlur={event => {
+                                        const val = event.target.value.trim()
+                                        if (val && !val.endsWith("-view")) {
+                                            setFormState(current => ({ ...current, permissionName: `${val}-view` }))
+                                        }
+                                    }}
+                                    className="py-5"
                                     placeholder="e.g. deals-view"
                                 />
                             </div>

@@ -3,7 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from './types/jwt-payload.type';
+import { JwtPayload } from './interfaces/auth.interface';
 import { SafeUser } from '../users/users.service';
 
 @Injectable()

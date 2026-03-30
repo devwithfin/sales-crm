@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { API_BASE_URL } from "@/constants/env"
+import { apiFetch } from "@/lib/api"
 
 export type MenuNode = {
     id: string
@@ -37,20 +37,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
 
         setIsLoading(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/menus`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            console.log("[MenuContext] Response status:", response.status)
-
-            if (!response.ok) {
-                throw new Error(`Failed to load menus: ${response.status}`)
-            }
-
-            const data = (await response.json()) as MenuNode[]
-            console.log("[MenuContext] Got menus:", data.length)
+            const data = await apiFetch<MenuNode[]>("/menus")
             setMenus(Array.isArray(data) ? data : [])
         } catch (error) {
             console.error("[MenuContext] Failed to fetch menus", error)
@@ -61,24 +48,8 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const fetchAllMenus = useCallback(async (): Promise<MenuNode[]> => {
-        const token = localStorage.getItem("token")
-
-        if (!token) {
-            return []
-        }
-
         try {
-            const response = await fetch(`${API_BASE_URL}/menus/all`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (!response.ok) {
-                throw new Error("Failed to load all menus")
-            }
-
-            const data = (await response.json()) as MenuNode[]
+            const data = await apiFetch<MenuNode[]>("/menus/all")
             return Array.isArray(data) ? data : []
         } catch (error) {
             console.error("Failed to fetch all menus", error)

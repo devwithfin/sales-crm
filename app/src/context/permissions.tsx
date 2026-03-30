@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { API_BASE_URL } from "@/constants/env"
+import { apiFetch } from "@/lib/api"
 
 type PermissionRecord = {
     id: string
@@ -39,10 +39,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
 
     const fetchPermissions = useCallback(async () => {
-        const token = localStorage.getItem("token")
         const roleId = getCurrentRoleId()
 
-        if (!token || !roleId) {
+        if (!roleId) {
             setPermissionNames([])
             setIsLoading(false)
             return
@@ -50,17 +49,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
         setIsLoading(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/roles/${roleId}/permissions`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            })
-
-            if (!response.ok) {
-                throw new Error("Failed to load permissions")
-            }
-
-            const data = (await response.json()) as PermissionRecord[]
+            const data = await apiFetch<PermissionRecord[]>(`/roles/${roleId}/permissions`)
             const assigned = data.filter(permission => permission.assigned).map(permission => permission.name)
             setPermissionNames(assigned)
         } catch (error) {

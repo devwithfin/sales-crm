@@ -5,13 +5,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { useMenuData, type MenuNode } from "@/context/menu"
 import { usePermissions } from "@/context/permissions"
 import { ChevronLeft } from "lucide-react"
 import { PERMISSION_ACTIONS, PERMISSION_ACTION_LABELS, type PermissionAction, formatResourceLabel } from "@/pages/module/config/permissions/columns"
 import { cn } from "@/lib/utils"
+import { apiFetch } from "@/lib/api"
 
 type RoleInfo = {
     id: string
@@ -161,36 +161,13 @@ export default function RoleEditPage() {
         if (!id) {
             return
         }
-        const token = localStorage.getItem("token")
-        if (!token) {
-            return
-        }
 
         const fetchData = async () => {
             try {
-                const [roleResponse, permissionResponse] = await Promise.all([
-                    fetch(`${API_BASE_URL}/roles/${id}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }),
-                    fetch(`${API_BASE_URL}/roles/${id}/permissions`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }),
+                const [roleData, permissionData] = await Promise.all([
+                    apiFetch<RoleInfo>(`/roles/${id}`),
+                    apiFetch<PermissionItem[]>(`/roles/${id}/permissions`),
                 ])
-
-                if (!roleResponse.ok) {
-                    throw new Error("Failed to load role")
-                }
-
-                if (!permissionResponse.ok) {
-                    throw new Error("Failed to load role permissions")
-                }
-
-                const roleData = (await roleResponse.json()) as RoleInfo
-                const permissionData = (await permissionResponse.json()) as PermissionItem[]
 
                 setRole(roleData)
                 setName(roleData.name)
@@ -267,12 +244,6 @@ export default function RoleEditPage() {
         const trimmedName = name.trim()
         const trimmedDescription = description.trim()
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            return
-        }
-
         if (roleInfoDirty && !trimmedName) {
             showToast({ type: "error", message: "Role name is required" })
             return
@@ -282,43 +253,24 @@ export default function RoleEditPage() {
         const shouldNavigate = permissionsDirty
         try {
             if (roleInfoDirty && trimmedName) {
-                const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
+                const updatedRole = await apiFetch<RoleInfo>(`/roles/${id}`, {
                     method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
                     body: JSON.stringify({
                         name: trimmedName,
                         description: trimmedDescription ? trimmedDescription : null,
                     }),
                 })
 
-                if (!response.ok) {
-                    const payload = await response.json().catch(() => null)
-                    throw new Error(payload?.message ?? "Failed to update role")
-                }
-
-                const updatedRole = (await response.json()) as RoleInfo
                 setRole(updatedRole)
                 setName(updatedRole.name)
                 setDescription(updatedRole.description ?? "")
             }
 
             if (permissionsDirty) {
-                const response = await fetch(`${API_BASE_URL}/roles/${id}/permissions`, {
+                await apiFetch(`/roles/${id}/permissions`, {
                     method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
                     body: JSON.stringify({ permissionIds: Array.from(selected) }),
                 })
-
-                if (!response.ok) {
-                    const payload = await response.json().catch(() => null)
-                    throw new Error(payload?.message ?? "Failed to update permissions")
-                }
 
                 setPermissions(prev =>
                     prev.map(permission => ({

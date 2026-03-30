@@ -24,6 +24,10 @@ export const genMenuRoutes: GeneratedRoute[] = [
     Component: lazy(() => import("@/pages/generated/menus")),
   },
   {
+    path: "/category-product",
+    Component: lazy(() => import("@/pages/generated/category-product")),
+  },
+  {
     path: "/reports",
     Component: lazy(() => import("@/pages/generated/reports")),
   },

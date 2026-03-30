@@ -4,9 +4,9 @@ import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
+import { apiFetch } from "@/lib/api"
 
 type Role = {
     id: string
@@ -37,24 +37,17 @@ export default function UserCreatePage() {
     // Load roles
     useEffect(() => {
         const loadRoles = async () => {
-            const token = localStorage.getItem("token")
-            if (!token) return
-
             try {
-                const response = await fetch(`${API_BASE_URL}/roles`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
-                if (response.ok) {
-                    const data = await response.json()
-                    setRoles(data)
-                }
+                const data = await apiFetch<Role[]>("/roles")
+                setRoles(Array.isArray(data) ? data : [])
             } catch (error) {
                 console.error("Failed to load roles:", error)
+                setRoles([])
             } finally {
                 setIsLoadingRoles(false)
             }
         }
-        loadRoles()
+        void loadRoles()
     }, [])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -92,21 +85,11 @@ export default function UserCreatePage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            return
-        }
-
         setErrors({})
         setIsSaving(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/users`, {
+            await apiFetch("/users", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     fullName: trimmedName,
                     email: trimmedEmail,
@@ -116,11 +99,6 @@ export default function UserCreatePage() {
                     status: formState.status,
                 }),
             })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to create user")
-            }
 
             showToast({ type: "success", message: "User created" })
             navigate("/users")

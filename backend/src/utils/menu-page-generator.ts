@@ -144,6 +144,20 @@ export const genMenuRoutes: GeneratedRoute[] = []
     await ensureStub(menu, generatedPagesDir);
   }
 
+  // Auto-Clean: Remove files that are no longer in the DB
+  try {
+    const existingFiles = await fs.readdir(generatedPagesDir);
+    const validFiles = new Set(validMenus.map(m => `${m.modelName}.tsx`));
+    
+    for (const file of existingFiles) {
+      if (!validFiles.has(file) && file.endsWith('.tsx')) {
+        await fs.unlink(path.join(generatedPagesDir, file));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to clean unused generated files', err);
+  }
+
   const routesContent = createRoutesTemplate(validMenus);
   await fs.writeFile(routesFile, routesContent, 'utf8');
 }

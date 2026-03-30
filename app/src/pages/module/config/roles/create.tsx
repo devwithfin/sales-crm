@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { API_BASE_URL } from "@/constants/env"
 import { useToast } from "@/context/toast"
 import { usePermissions } from "@/context/permissions"
+import { apiFetch } from "@/lib/api"
 
 export default function RoleCreatePage() {
     const navigate = useNavigate()
@@ -33,31 +33,16 @@ export default function RoleCreatePage() {
             return
         }
 
-        const token = localStorage.getItem("token")
-        if (!token) {
-            showToast({ type: "error", message: "Authentication required" })
-            return
-        }
-
         setErrors({})
         setIsSaving(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/roles`, {
+            await apiFetch("/roles", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     name: trimmedName,
                     description: trimmedDescription ? trimmedDescription : null,
                 }),
             })
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => null)
-                throw new Error(payload?.message ?? "Failed to create role")
-            }
 
             showToast({ type: "success", message: "Role created" })
             navigate("/roles")
